@@ -1,0 +1,22 @@
+	// @see ::DrawTexturePro()
+	void Draw(bool flipX, bool flipY, raylib::Vector2 pivotPercent = raylib::Vector2{0.5, 0.5}) {
+		rect.SetPosition(position);
+		rect.SetSize(texture.GetSize());
+		raylib::Rectangle sourceRec(rect);
+		raylib::Rectangle destRec(rect);
+		raylib::Vector2 origin(position);
+		// if (flipX) { sourceRec.width *= -1; std::cout << sourceRec.width << std::endl; }
+		// if (flipY) { sourceRec.height *= -1; }
+		texture.Draw(sourceRec, destRec, origin, rotation, tint);
+		if (SHOW_BOXES) { rect.Draw(rectColor); }
+	};
+	void Draw(raylib::Vector2 drawproPosition, bool flipX, bool flipY, raylib::Vector2 drawproScale, raylib::Vector2 pivotPercent = raylib::Vector2{0.5, 0.5}) {
+		rect.SetPosition(position);
+		rect.SetSize(texture.GetSize());
+		raylib::Rectangle sourceRec(rect);
+		if (flipX) { sourceRec.width *= -1; }
+		if (flipY) { sourceRec.height *= -1; }
+		raylib::Vector2 origin(drawproScale*pivotPercent);
+		raylib::Rectangle destRec(drawproPosition, drawproScale);
+		texture.Draw(rect, destRec, origin, rotation, tint);
+		if (SHOW_BOXES) { sourceRec.Draw(rectColor); }
