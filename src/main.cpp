@@ -268,14 +268,23 @@ class FadeScreen
 private:
 	raylib::Rectangle rec;
 	raylib::Color color;
-	float alpha = 0.0f;
-	float alphaDefault = 0.0f;
-	float alphaTarget = 1.0f;
+	int alpha = 0;
+	int alphaDefault = 0;
+	int alphaTarget = 255;
 	float fadeDuration = 0.5f;
-	double elapsedTime;
+	float elapsedTime;
 public:
-	bool hasStartedFadingIn;
-	bool hasStartedFadingOut;
+	enum class FadeEvent
+	{
+		IDLE, // Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
+		FADING_IN, // Is currently fading in.
+		FADING_OUT, // Is currently fading in.
+		FADED_IN, // Has finished fading in (idle).
+		FADED_OUT // Has finished fading out (idle).
+	};
+	FadeEvent fadeEvent;
+	bool hasStartedFadingIn = false;
+	bool hasStartedFadingOut = false;
 	FadeScreen(raylib::Color self_color) : color(self_color)
 	{
 		int monitor = GetCurrentMonitor();
@@ -284,50 +293,45 @@ public:
 	};
 	void Draw()
 	{
-		color.SetA(alpha);
+		color.a = alpha;
 		rec.Draw(color);
 	}
 	void FadeIn(float duration)
 	{
-		hasStartedFadingIn = true;
-		hasStartedFadingOut = false;
-		if (!hasStartedFadingIn)
-		{
-			fadeDuration = duration;
-			elapsedTime = 0.0f;
-		}
+		fadeEvent = FadeEvent::FADING_IN;
+		fadeDuration = duration;
+		elapsedTime = 0.0f;
 	};
 	void FadeOut(float duration)
 	{
-		hasStartedFadingIn = false;
-		hasStartedFadingOut = true;
+		fadeEvent = FadeEvent::FADING_OUT;
 		fadeDuration = duration;
 		elapsedTime = 0.0f;
 	};
 	void RefreshFade(float delta)
 	{
-		if (hasStartedFadingIn)
+		if (fadeEvent == FadeEvent::FADING_OUT)
 		{
-			if (alpha < 1.0f)
+			if (alpha > alphaDefault)
 			{
-				alpha = EaseSineInOut(elapsedTime, alphaTarget, alphaTarget - alphaDefault, fadeDuration);
+				alpha = EaseSineOut(elapsedTime, alphaTarget, alphaDefault - alphaTarget, fadeDuration);
 				elapsedTime += delta;
 			}
 			else
 			{
-				hasStartedFadingIn = false;
+				fadeEvent = FadeEvent::FADED_OUT;
 			}
 		}
-		else if (hasStartedFadingOut)
+		else if (fadeEvent == FadeEvent::FADING_IN)
 		{
-			if (alpha > 0.0f)
+			if (alpha < 255)
 			{
-				alpha = EaseSineInOut(elapsedTime, alphaDefault, alphaDefault - alphaTarget, fadeDuration);
+				alpha = EaseSineIn(elapsedTime, alphaDefault, alphaTarget - alphaDefault, fadeDuration);
 				elapsedTime += delta;
 			}
 			else
 			{
-				hasStartedFadingOut = false;
+				fadeEvent == FadeEvent::FADED_IN;
 			}
 		}
 	}
@@ -393,8 +397,8 @@ int main() {
 		createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 		fader.RefreshFade(deltaTime);
 
-		if (playButton.hasBeenReleased) {
-			fader.FadeIn(0.5f);
+		if (playButton.hasBeenReleased && !fader.hasStartedFadingIn) {
+			fader.FadeIn(0.25f);
 		}
 
 		// TODO: Add a camera system.
