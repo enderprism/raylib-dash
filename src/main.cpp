@@ -197,25 +197,32 @@ private:
 	float scaleDefault = 1.0f;
 	float scaleTarget = 1.2f; // Target scale when the button is pressed
 	float scaleDuration = 0.2f; // Duration of the scale animation
-	double elapsedTime;
+	float elapsedTime;
 public:
 	using Sprite::Sprite;
+	enum class ButtonEvent
+	{
+		IDLE, // Only used when initializing the ButtonEvent to avoid triggering a press or release.
+		IN_ANIM_PRESSED, // Is currently in the press animation.
+		IN_ANIM_RELEASED, // Is currently in the release animation.
+		FINISHED_ANIM_PRESSED, // Has finished the press animation (idle).
+		FINISHED_ANIM_RELEASED // Has finished the release animation (idle).
+	};
+	ButtonEvent buttonEvent;
 	bool hasBeenPressed = false;
 	bool hasBeenReleased = false;
 	void RefreshButtonScale(float delta, raylib::Camera2D& camera) {
 		if (IsHovered(camera) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
-			hasBeenPressed = true;
-			hasBeenReleased = false;
-			elapsedTime = 0.0;
+			buttonEvent = ButtonEvent::IN_ANIM_PRESSED;
+			elapsedTime = 0.0f;
 		}
-		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && hasBeenPressed)
+		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && buttonEvent == ButtonEvent::IN_ANIM_PRESSED || buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED)
 		{
-			hasBeenPressed = false;
-			hasBeenReleased = true;
-			elapsedTime = 0.0;
+			buttonEvent = ButtonEvent::IN_ANIM_RELEASED;
+			elapsedTime = 0.0f;
 		}
-		if (hasBeenReleased)
+		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED)
 		{
 			if (scale > scaleDefault)
 			{
@@ -224,44 +231,23 @@ public:
 			}
 			else
 			{
-				hasBeenReleased = false;
+				buttonEvent = ButtonEvent::FINISHED_ANIM_RELEASED;
 			}
 		}
-		else if (hasBeenPressed)
+		else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED)
 		{
 			if (scale < scaleTarget)
 			{
 				scale = EaseBounceOut(elapsedTime, scaleDefault, scaleTarget - scaleDefault, scaleDuration);
 				elapsedTime += delta;
 			}
+			else
+			{
+				buttonEvent = ButtonEvent::FINISHED_ANIM_PRESSED;
+			}
 		}
 	}
 };
-
-enum class CurrentScreen {
-	TITLE,
-	SETTINGS,
-	LEVEL_SELECTOR,
-	IN_LEVEL,
-};
-
-float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, float delta)
-{
-	int monitor = GetCurrentMonitor();
-	if (window->IsFullscreen()) {
-		window->ToggleFullscreen();
-		window->SetSize(winWidth, winHeight);
-		// return the camera zoom multiplier
-		return static_cast<float>(winWidth)/static_cast<float>(GetMonitorWidth(monitor));
-	} else {
-		window->SetSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
-		WaitTime(delta);
-		PollInputEvents();
-		window->ToggleFullscreen();
-		// return the camera zoom multiplier
-		return 1.0f;
-	}
-}
 
 class FadeScreen
 {
@@ -336,6 +322,31 @@ public:
 		}
 	}
 };
+
+enum class CurrentScreen {
+	TITLE,
+	SETTINGS,
+	LEVEL_SELECTOR,
+	IN_LEVEL,
+};
+
+float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, float delta)
+{
+	int monitor = GetCurrentMonitor();
+	if (window->IsFullscreen()) {
+		window->ToggleFullscreen();
+		window->SetSize(winWidth, winHeight);
+		// return the camera zoom multiplier
+		return static_cast<float>(winWidth)/static_cast<float>(GetMonitorWidth(monitor));
+	} else {
+		window->SetSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+		WaitTime(delta);
+		PollInputEvents();
+		window->ToggleFullscreen();
+		// return the camera zoom multiplier
+		return 1.0f;
+	}
+}
 
 int main() {
 	// Initialization
