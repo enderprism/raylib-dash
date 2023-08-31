@@ -217,7 +217,7 @@ public:
 			buttonEvent = ButtonEvent::IN_ANIM_PRESSED;
 			elapsedTime = 0.0f;
 		}
-		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && buttonEvent == ButtonEvent::IN_ANIM_PRESSED || buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED)
+		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && (buttonEvent == ButtonEvent::IN_ANIM_PRESSED || buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED))
 		{
 			buttonEvent = ButtonEvent::IN_ANIM_RELEASED;
 			elapsedTime = 0.0f;
@@ -260,11 +260,12 @@ private:
 	float fadeDuration = 0.5f;
 	float elapsedTime;
 public:
+	int GetAlpha() { return alpha; };
 	enum class FadeEvent
 	{
 		IDLE, // Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
 		FADING_IN, // Is currently fading in.
-		FADING_OUT, // Is currently fading in.
+		FADING_OUT, // Is currently fading out.
 		FADED_IN, // Has finished fading in (idle).
 		FADED_OUT // Has finished fading out (idle).
 	};
@@ -310,14 +311,14 @@ public:
 		}
 		else if (fadeEvent == FadeEvent::FADING_IN)
 		{
-			if (alpha < 255)
+			if (alpha < alphaTarget)
 			{
 				alpha = EaseSineIn(elapsedTime, alphaDefault, alphaTarget - alphaDefault, fadeDuration);
 				elapsedTime += delta;
 			}
 			else
 			{
-				fadeEvent == FadeEvent::FADED_IN;
+				fadeEvent = FadeEvent::FADED_IN;
 			}
 		}
 	}
@@ -408,8 +409,16 @@ int main() {
 		createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 		fader.RefreshFade(deltaTime);
 
-		if (playButton.hasBeenReleased && !fader.hasStartedFadingIn) {
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED && fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
+		{
 			fader.FadeIn(0.25f);
+		}
+
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED && fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
+		{
+			currentScreen = CurrentScreen::LEVEL_SELECTOR;
+			fader.FadeOut(0.25f);
+			playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
 		}
 
 		// TODO: Add a camera system.
@@ -463,8 +472,14 @@ int main() {
 						textColor.DrawText("Congrats! You created your first window!", 190, 200, 20);
 					EndMode2D();
 					break;
+				case CurrentScreen::LEVEL_SELECTOR:
+					ClearBackground(WHITE);
+					BeginMode2D(winSizeCamera);
+						DrawText("[LEVEL SELECTOR]", 1920/2-10*25, GetMonitorHeight(GetCurrentMonitor())/2-25, 50, BLACK);
+					EndMode2D();
+					break;
 				default:
-					ClearBackground(BLACK);
+					ClearBackground(WHITE);
 					break;
 			}
 		fader.Draw();
