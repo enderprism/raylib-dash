@@ -1,68 +1,99 @@
-#include <raylib-cpp.hpp>
 #include <iostream>
+#include <raylib-cpp.hpp>
 #include <reasings.h>
 
 #define FRAMERATE 60
 #define SHOW_BOXES false
-#define VECTOR2_ZERO raylib::Vector2{0.0f, 0.0f}
+#define VECTOR2_ZERO raylib::Vector2 { 0.0f, 0.0f }
 
-class Sprite
-{
+class Sprite {
 public:
 	raylib::Texture2D texture;
-	raylib::Rectangle rect;
+	raylib::Rectangle debugRect;
 	raylib::Color rectColor;
 	raylib::Vector2 position;
-	float scale;
+	float scale;            // Scale as a float (equal X and Y scale).
+	raylib::Vector2 scaleV; // Scale as a raylib::Vector2.
 	float rotation;
-	raylib::Color tint; // Add a member for tint
+	raylib::Color tint;
 
 	Sprite(Texture2D self_texture, raylib::Vector2 self_position = raylib::Vector2{0.0, 0.0}, float self_scale = 1.0f, float self_rotation = 0.0f, raylib::Color self_tint = WHITE)
 		: texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
 	{
+		scaleV = raylib::Vector2{scale, scale};
 		texture.SetFilter(TEXTURE_FILTER_TRILINEAR);
 		rectColor = raylib::Color((GetRandomValue(0, 255)), (GetRandomValue(0, 255)), (GetRandomValue(0, 255)), 50);
 		// rectColor = raylib::Color(0xff000088);
 	};
 	void Draw() {
-		rect.SetPosition(position);
-		rect.SetWidth(texture.GetWidth()*abs(scale));
-		rect.SetHeight(texture.GetHeight()*abs(scale));
-		if (scale < 0)
-		{
-			rect.x -= texture.width*abs(scale);
-			rect.y -= texture.height*abs(scale);
+		scaleV = raylib::Vector2{scale, scale};
+		debugRect.SetPosition(position);
+		debugRect.SetWidth(texture.GetWidth() * abs(scale));
+		debugRect.SetHeight(texture.GetHeight() * abs(scale));
+		if (scale < 0) {
+			debugRect.x -= texture.width * abs(scale);
+			debugRect.y -= texture.height * abs(scale);
 		}
-		texture.Draw(position, rotation, scale, tint);
-		if (SHOW_BOXES) { rect.Draw(rectColor); }
+		texture.Draw
+		(
+			// sourceRec
+			raylib::Rectangle
+			{
+				0.0f, 0.0f,
+				(float)texture.GetWidth(),
+				(float)texture.GetHeight()
+			},
+			// destRec
+			raylib::Rectangle
+			{
+				position.x + (float)texture.GetWidth() / 2,
+				position.y + (float)texture.GetHeight() / 2,
+				scaleV.x * (float)texture.GetWidth(),
+				scaleV.y * (float)texture.GetHeight()},
+			raylib::Vector2
+			{
+				(float)texture.GetWidth() / 2,
+				(float)texture.GetHeight() / 2
+			},
+			rotation, tint
+		);
+		std::cout << position.x << std::endl; // DEBUG
+		if (SHOW_BOXES) {
+			debugRect.Draw(rectColor);
+		}
 	};
-	void Draw(raylib::Vector2 drawPosition) {
-		if (drawPosition.y == 0 && position.y != 0.0) {
+	void Draw(raylib::Vector2 drawPosition)
+	{
+		if (drawPosition.y == 0 && position.y != 0.0)
+		{
 			drawPosition.y = position.y;
 		}
-		rect.SetPosition(position);
-		rect.SetWidth(texture.GetWidth()*scale);
-		rect.SetHeight(texture.GetHeight()*scale);
+		debugRect.SetPosition(position);
+		debugRect.SetWidth(texture.GetWidth() * scale);
+		debugRect.SetHeight(texture.GetHeight() * scale);
 		texture.Draw(drawPosition, rotation, scale, tint);
-		if (SHOW_BOXES) { rect.Draw(rectColor); }
+		if (SHOW_BOXES) { debugRect.Draw(rectColor); }
 	};
 	void Draw(raylib::Vector2 drawPosition, float drawRotation) {
-		if (drawPosition.y == 0 && position.y != 0.0) {
+		if (drawPosition.y == 0 && position.y != 0.0)
+		{
 			drawPosition.y = position.y;
 		}
-		rect.SetPosition(position);
-		rect.SetWidth(texture.GetWidth()*scale);
-		rect.SetHeight(texture.GetHeight()*scale);
+		debugRect.SetPosition(position);
+		debugRect.SetWidth(texture.GetWidth() * scale);
+		debugRect.SetHeight(texture.GetHeight() * scale);
 		texture.Draw(drawPosition, drawRotation, scale, tint);
-		if (SHOW_BOXES) { rect.Draw(rectColor); }
+		if (SHOW_BOXES) {
+			debugRect.Draw(rectColor);
+		}
 	};
 	bool IsHovered(raylib::Camera2D& camera) {
 		raylib::Rectangle translatedRect = raylib::Rectangle{
-			GetWorldToScreen2D(position, camera).x,
-			GetWorldToScreen2D(position, camera).y,
-			static_cast<float>(texture.width) * camera.GetZoom(),
-			static_cast<float>(texture.height) * camera.GetZoom()
-		};
+				GetWorldToScreen2D(position, camera).x,
+				GetWorldToScreen2D(position, camera).y,
+				static_cast<float>(texture.width) * camera.GetZoom(),
+				static_cast<float>(texture.height) * camera.GetZoom()
+				};
 		if (translatedRect.CheckCollision(GetMousePosition())) {
 			return true;
 		} else {
@@ -80,8 +111,8 @@ raylib::Vector2 Sprite::GetCenter()
 {
 	return raylib::Vector2
 	{
-		position.x + static_cast<float>(texture.width) * scale * 0.5f,
-		position.y + static_cast<float>(texture.height) * scale * 0.5f
+			position.x + static_cast<float>(texture.width) * scale * 0.5f,
+			position.y + static_cast<float>(texture.height) * scale * 0.5f
 	};
 }
 
@@ -91,8 +122,8 @@ raylib::Vector2 Sprite::GetWinPercentage()
 	int monitor = GetCurrentMonitor();
 	return raylib::Vector2
 	{
-		GetCenter().x/GetMonitorWidth(monitor),
-		GetCenter().y/GetMonitorHeight(monitor)
+		GetCenter().x / GetMonitorWidth(monitor),
+		GetCenter().y / GetMonitorHeight(monitor)
 	};
 }
 
@@ -101,8 +132,8 @@ raylib::Vector2 Sprite::GetWinPercentage(raylib::Rectangle rec)
 {
 	return raylib::Vector2
 	{
-		GetCenter().x/rec.width,
-		GetCenter().y/rec.height
+		GetCenter().x / rec.width,
+		GetCenter().y / rec.height
 	};
 }
 
@@ -111,8 +142,8 @@ raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage) {
 	int monitor = GetCurrentMonitor();
 	return raylib::Vector2
 	{
-		(GetMonitorWidth(monitor)*percentage.x)-(texture.width/2)*scale,
-		(GetMonitorHeight(monitor)*percentage.y)-(texture.height/2)*scale
+		(GetMonitorWidth(monitor) * percentage.x) - (texture.width / 2) * scale,
+		(GetMonitorHeight(monitor) * percentage.y) - (texture.height / 2) * scale
 	};
 }
 
@@ -120,42 +151,39 @@ raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage) {
 raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec) {
 	return raylib::Vector2
 	{
-		(rec.width*percentage.x)-(texture.width/2)*scale,
-		(rec.height*percentage.y)-(texture.height/2)*scale
+			(rec.width * percentage.x) - (texture.width / 2) * scale,
+			(rec.height * percentage.y) - (texture.height / 2) * scale
 	};
 }
 
-enum class Edge {
-	LEFT,
-	RIGHT,
-	TOP,
-	BOTTOM
-};
+enum class Edge { LEFT, RIGHT, TOP, BOTTOM };
 
-int GetEdge(const raylib::Camera2D& camera, const raylib::Window& window, Edge edge)
-{
-	switch (edge)
-	{
-		case Edge::LEFT: return camera.target.x - window.GetWidth()/2 * camera.zoom;
-		case Edge::RIGHT: return camera.target.x + window.GetWidth()/2 * camera.zoom;
-		case Edge::TOP: return camera.target.y - window.GetHeight()/2 * camera.zoom;
-		case Edge::BOTTOM: return camera.target.y + window.GetHeight()/2 * camera.zoom;
-		default: return camera.target.x;
+int GetEdge(const raylib::Camera2D& camera, const raylib::Window &window, Edge edge) {
+	switch (edge) {
+		case Edge::LEFT:
+			return camera.target.x - window.GetWidth() / 2 * camera.zoom;
+		case Edge::RIGHT:
+			return camera.target.x + window.GetWidth() / 2 * camera.zoom;
+		case Edge::TOP:
+			return camera.target.y - window.GetHeight() / 2 * camera.zoom;
+		case Edge::BOTTOM:
+			return camera.target.y + window.GetHeight() / 2 * camera.zoom;
+		default:
+			return camera.target.x;
 	}
 }
 
-class ParallaxSprite: public Sprite 
-{
+class ParallaxSprite : public Sprite {
 public:
 	using Sprite::Sprite;
 	void SetParallaxFactor(float factor) { parallaxFactor = factor; };
 	float GetParallaxFactor() { return parallaxFactor; };
+
 private:
 	float parallaxFactor;
 };
 
-class Player: public Sprite
-{
+class Player : public Sprite {
 public:
 	raylib::Vector2 speed{625.0, 20.0};
 	raylib::Vector2 velocity;
@@ -170,7 +198,7 @@ public:
 void Player::UpdatePlayer(float delta) {
 	// Get direction
 
-	direction.x = IsKeyDown(KEY_RIGHT)-IsKeyDown(KEY_LEFT);
+	direction.x = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
 
 	// Friction calculation
 
@@ -188,61 +216,52 @@ void Player::UpdatePlayer(float delta) {
 		}
 	}
 	position.x += velocity.x;
-
 };
 
-class SpriteButton: public Sprite
-{
+class SpriteButton : public Sprite {
 private:
 	float scaleDefault = 1.0f;
-	float scaleTarget = 1.2f; // Target scale when the button is pressed
+	float scaleTarget = 1.2f;   // Target scale when the button is pressed
 	float scaleDuration = 0.2f; // Duration of the scale animation
 	float elapsedTime;
+
 public:
 	using Sprite::Sprite;
-	enum class ButtonEvent
-	{
-		IDLE, // Only used when initializing the ButtonEvent to avoid triggering a press or release.
-		IN_ANIM_PRESSED, // Is currently in the press animation.
-		IN_ANIM_RELEASED, // Is currently in the release animation.
+	void ResetElapsedTime() { elapsedTime = 0.0f; };
+	enum class ButtonEvent {
+		IDLE, // Only used when initializing the ButtonEvent to avoid triggering a
+					// press or release.
+		IN_ANIM_PRESSED,       // Is currently in the press animation.
+		IN_ANIM_RELEASED,      // Is currently in the release animation.
 		FINISHED_ANIM_PRESSED, // Has finished the press animation (idle).
 		FINISHED_ANIM_RELEASED // Has finished the release animation (idle).
 	};
 	ButtonEvent buttonEvent;
-	bool hasBeenPressed = false;
-	bool hasBeenReleased = false;
-	void RefreshButtonScale(float delta, raylib::Camera2D& camera) {
-		if (IsHovered(camera) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
+	void RefreshButtonScale(float delta, raylib::Camera2D &camera) {
+		if (IsHovered(camera) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			buttonEvent = ButtonEvent::IN_ANIM_PRESSED;
 			elapsedTime = 0.0f;
 		}
-		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && (buttonEvent == ButtonEvent::IN_ANIM_PRESSED || buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED))
-		{
+		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
+				(buttonEvent == ButtonEvent::IN_ANIM_PRESSED ||
+				 buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED)) {
 			buttonEvent = ButtonEvent::IN_ANIM_RELEASED;
 			elapsedTime = 0.0f;
 		}
-		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED)
-		{
-			if (scale > scaleDefault)
-			{
-				scale = EaseBounceOut(elapsedTime, scaleTarget, scaleDefault - scaleTarget, scaleDuration);
+		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED) {
+			if (scale > scaleDefault) {
+				scale = EaseBounceOut(elapsedTime, scaleTarget,
+															scaleDefault - scaleTarget, scaleDuration);
 				elapsedTime += delta;
-			}
-			else
-			{
+			} else {
 				buttonEvent = ButtonEvent::FINISHED_ANIM_RELEASED;
 			}
-		}
-		else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED)
-		{
-			if (scale < scaleTarget)
-			{
-				scale = EaseBounceOut(elapsedTime, scaleDefault, scaleTarget - scaleDefault, scaleDuration);
+		} else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED) {
+			if (scale < scaleTarget) {
+				scale = EaseBounceOut(elapsedTime, scaleDefault,
+															scaleTarget - scaleDefault, scaleDuration);
 				elapsedTime += delta;
-			}
-			else
-			{
+			} else {
 				buttonEvent = ButtonEvent::FINISHED_ANIM_PRESSED;
 			}
 		}
@@ -261,17 +280,14 @@ private:
 	float elapsedTime;
 public:
 	int GetAlpha() { return alpha; };
-	enum class FadeEvent
-	{
-		IDLE, // Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
-		FADING_IN, // Is currently fading in.
+	enum class FadeEvent {
+		IDLE,       // Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
+		FADING_IN,  // Is currently fading in.
 		FADING_OUT, // Is currently fading out.
-		FADED_IN, // Has finished fading in (idle).
-		FADED_OUT // Has finished fading out (idle).
+		FADED_IN,   // Has finished fading in (idle).
+		FADED_OUT   // Has finished fading out (idle).
 	};
 	FadeEvent fadeEvent;
-	bool hasStartedFadingIn = false;
-	bool hasStartedFadingOut = false;
 	FadeScreen(raylib::Color self_color) : color(self_color)
 	{
 		int monitor = GetCurrentMonitor();
@@ -301,7 +317,7 @@ public:
 		{
 			if (alpha > alphaDefault)
 			{
-				alpha = EaseSineOut(elapsedTime, alphaTarget, alphaDefault - alphaTarget, fadeDuration);
+				alpha = EaseSineIn(elapsedTime, alphaTarget, alphaDefault - alphaTarget, fadeDuration);
 				elapsedTime += delta;
 			}
 			else
@@ -338,7 +354,7 @@ float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, f
 		window->ToggleFullscreen();
 		window->SetSize(winWidth, winHeight);
 		// return the camera zoom multiplier
-		return static_cast<float>(winWidth)/static_cast<float>(GetMonitorWidth(monitor));
+		return static_cast<float>(winWidth) / static_cast<float>(GetMonitorWidth(monitor));
 	} else {
 		window->SetSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
 		WaitTime(delta);
@@ -400,7 +416,8 @@ int main() {
 		ground.position.x -= 750 * deltaTime;
 		ground.position.x = fmodf(ground.position.x, ground.texture.width * ground.scale);
 
-		if (IsKeyPressed(KEY_F11)) {
+		if (IsKeyPressed(KEY_F11))
+		{
 			winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
 		}
 
@@ -409,12 +426,33 @@ int main() {
 		createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 		fader.RefreshFade(deltaTime);
 
-		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED && fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
+		// DEBUG
+		/*
+		float garageButtonTimer;
+		garageButtonTimer += deltaTime;
+		if (garageButtonTimer >= 1.0f)
+		{
+			garageButton.buttonEvent = SpriteButton::ButtonEvent::IN_ANIM_PRESSED;
+			garageButton.ResetElapsedTime();
+			garageButtonTimer = 0.0f;
+			garageButton.rotation += 90.0f;
+			garageButton.rotation = fmodf(garageButton.rotation, 360.0f);
+		}
+		
+		if (garageButtonTimer > 0.19f && garageButtonTimer < 0.21f)
+		{
+			garageButton.buttonEvent = SpriteButton::ButtonEvent::IN_ANIM_RELEASED;
+			garageButton.ResetElapsedTime();
+		} */
+
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
+			playButton.IsHovered(winSizeCamera) &&
+			fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
 		{
 			fader.FadeIn(0.25f);
 		}
-
-		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED && fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED &&
+			fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
 		{
 			currentScreen = CurrentScreen::LEVEL_SELECTOR;
 			fader.FadeOut(0.25f);
@@ -425,63 +463,74 @@ int main() {
 		playerCamera.zoom = winSizeZoomMultiplier;
 		winSizeCamera.zoom = winSizeZoomMultiplier;
 
-		switch (currentScreen) {
-			case CurrentScreen::TITLE:
-				if (!menuLoop.IsPlaying())
-				{
-					menuLoop.Play();
-				}
-				logo.position.x = logo.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
-				groundLine.position.x = groundLine.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
-				garageButton.position = garageButton.MoveToWinPercentage(raylib::Vector2{0.35f, 0.5f});
-				playButton.position = playButton.MoveToWinPercentage(raylib::Vector2{0.5f, 0.5f});
-				createButton.position = createButton.MoveToWinPercentage(raylib::Vector2{0.65f, 0.5f});
-				break;
-			case CurrentScreen::IN_LEVEL:
-				player.UpdatePlayer(deltaTime);
-				break;
+		switch (currentScreen)
+		{
+		case CurrentScreen::TITLE:
+			if (!menuLoop.IsPlaying())
+			{
+				menuLoop.Play();
+			}
+			logo.position.x = logo.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
+			groundLine.position.x = groundLine.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
+			garageButton.position = garageButton.MoveToWinPercentage(raylib::Vector2{0.35f, 0.5f});
+			playButton.position = playButton.MoveToWinPercentage(raylib::Vector2{0.5f, 0.5f});
+			createButton.position = createButton.MoveToWinPercentage(raylib::Vector2{0.65f, 0.5f});
+			break;
+		case CurrentScreen::IN_LEVEL:
+			player.UpdatePlayer(deltaTime);
+			break;
 		}
 
 		// Draw
 		BeginDrawing();
-			switch (currentScreen)
-			{
-				case CurrentScreen::TITLE:
-					BeginMode2D(winSizeCamera);
-						ClearBackground(WHITE);
-						background.Draw();
-						background.Draw(raylib::Vector2{background.position.x + background.texture.width * background.scale});
-						background.Draw(raylib::Vector2{background.position.x + background.texture.width * 2 * background.scale});
-						ground.Draw();
-						ground.Draw(raylib::Vector2{ground.position.x + ground.texture.width * ground.scale});
-						groundShadow.Draw();
-						groundShadow.Draw(raylib::Vector2{static_cast<float>(GetMonitorWidth(GetCurrentMonitor())), ground.position.y+groundShadow.texture.height*groundShadow.scale}, 180.0f);
-						BeginBlendMode(BLEND_ADDITIVE);
-							groundLine.Draw();
-						EndBlendMode();
-						logo.Draw();
-						garageButton.Draw();
-						playButton.Draw();
-						createButton.Draw();
-					EndMode2D();
-					break;
-				case CurrentScreen::IN_LEVEL:
-					BeginMode2D(playerCamera);
-						ClearBackground(WHITE);
-						player.Draw();
-						textColor.DrawText("Congrats! You created your first window!", 190, 200, 20);
-					EndMode2D();
-					break;
-				case CurrentScreen::LEVEL_SELECTOR:
-					ClearBackground(WHITE);
-					BeginMode2D(winSizeCamera);
-						DrawText("[LEVEL SELECTOR]", 1920/2-10*25, GetMonitorHeight(GetCurrentMonitor())/2-25, 50, BLACK);
-					EndMode2D();
-					break;
-				default:
-					ClearBackground(WHITE);
-					break;
-			}
+		switch (currentScreen) {
+		case CurrentScreen::TITLE:
+			BeginMode2D(winSizeCamera);
+			ClearBackground(WHITE);
+			background.Draw();
+			background.Draw(raylib::Vector2{
+					background.position.x + background.texture.width * background.scale});
+			background.Draw(
+					raylib::Vector2{background.position.x +
+													background.texture.width * 2 * background.scale});
+			ground.Draw();
+			ground.Draw(raylib::Vector2{ground.position.x +
+																	ground.texture.width * ground.scale});
+			groundShadow.Draw();
+			groundShadow.Draw(
+					raylib::Vector2{
+							static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
+							ground.position.y +
+									groundShadow.texture.height * groundShadow.scale},
+					180.0f);
+			BeginBlendMode(BLEND_ADDITIVE);
+			groundLine.Draw();
+			EndBlendMode();
+			logo.Draw();
+			garageButton.Draw();
+			playButton.Draw();
+			createButton.Draw();
+			EndMode2D();
+			break;
+		case CurrentScreen::IN_LEVEL:
+			BeginMode2D(playerCamera);
+			ClearBackground(WHITE);
+			player.Draw();
+			textColor.DrawText("Congrats! You created your first window!", 190, 200,
+												 20);
+			EndMode2D();
+			break;
+		case CurrentScreen::LEVEL_SELECTOR:
+			ClearBackground(WHITE);
+			BeginMode2D(winSizeCamera);
+			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25,
+							 GetMonitorHeight(GetCurrentMonitor()) / 2 - 25, 50, BLACK);
+			EndMode2D();
+			break;
+		default:
+			ClearBackground(WHITE);
+			break;
+		}
 		fader.Draw();
 		EndDrawing();
 	}
