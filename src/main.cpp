@@ -426,25 +426,6 @@ int main() {
 		createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 		fader.RefreshFade(deltaTime);
 
-		// DEBUG
-		/*
-		float garageButtonTimer;
-		garageButtonTimer += deltaTime;
-		if (garageButtonTimer >= 1.0f)
-		{
-			garageButton.buttonEvent = SpriteButton::ButtonEvent::IN_ANIM_PRESSED;
-			garageButton.ResetElapsedTime();
-			garageButtonTimer = 0.0f;
-			garageButton.rotation += 90.0f;
-			garageButton.rotation = fmodf(garageButton.rotation, 360.0f);
-		}
-		
-		if (garageButtonTimer > 0.19f && garageButtonTimer < 0.21f)
-		{
-			garageButton.buttonEvent = SpriteButton::ButtonEvent::IN_ANIM_RELEASED;
-			garageButton.ResetElapsedTime();
-		} */
-
 		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
 			playButton.IsHovered(winSizeCamera) &&
 			fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
@@ -491,18 +472,17 @@ int main() {
 			background.Draw(raylib::Vector2{
 					background.position.x + background.texture.width * background.scale});
 			background.Draw(
-					raylib::Vector2{background.position.x +
-													background.texture.width * 2 * background.scale});
+					raylib::Vector2{background.position.x + background.texture.width * 2 * background.scale});
 			ground.Draw();
-			ground.Draw(raylib::Vector2{ground.position.x +
-																	ground.texture.width * ground.scale});
+			ground.Draw(raylib::Vector2{ground.position.x + ground.texture.width * ground.scale});
 			groundShadow.Draw();
 			groundShadow.Draw(
-					raylib::Vector2{
-							static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
-							ground.position.y +
-									groundShadow.texture.height * groundShadow.scale},
-					180.0f);
+				raylib::Vector2{
+					static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
+					ground.position.y + groundShadow.texture.height * groundShadow.scale
+				},
+				180.0f
+			);
 			BeginBlendMode(BLEND_ADDITIVE);
 			groundLine.Draw();
 			EndBlendMode();
@@ -516,8 +496,7 @@ int main() {
 			BeginMode2D(playerCamera);
 			ClearBackground(WHITE);
 			player.Draw();
-			textColor.DrawText("Congrats! You created your first window!", 190, 200,
-												 20);
+			textColor.DrawText("Congrats! You created your first window!", 190, 200, 20);
 			EndMode2D();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
