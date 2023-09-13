@@ -57,7 +57,7 @@ public:
 			},
 			rotation, tint
 		);
-		std::cout << position.x << std::endl; // DEBUG
+		// std::cout << position.x << std::endl; // DEBUG
 		if (SHOW_BOXES) {
 			debugRect.Draw(rectColor);
 		}
@@ -151,8 +151,8 @@ raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage) {
 raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec) {
 	return raylib::Vector2
 	{
-			(rec.width * percentage.x) - (texture.width / 2) * scale,
-			(rec.height * percentage.y) - (texture.height / 2) * scale
+		(rec.width * percentage.x) - (texture.width / 2) * scale,
+		(rec.height * percentage.y) - (texture.height / 2) * scale
 	};
 }
 
@@ -161,13 +161,13 @@ enum class Edge { LEFT, RIGHT, TOP, BOTTOM };
 int GetEdge(const raylib::Camera2D& camera, const raylib::Window &window, Edge edge) {
 	switch (edge) {
 		case Edge::LEFT:
-			return camera.target.x - window.GetWidth() / 2 * camera.zoom;
+			return camera.target.x - (float)window.GetWidth() / 2 * camera.zoom;
 		case Edge::RIGHT:
-			return camera.target.x + window.GetWidth() / 2 * camera.zoom;
+			return camera.target.x + (float)window.GetWidth() / 2 * camera.zoom;
 		case Edge::TOP:
-			return camera.target.y - window.GetHeight() / 2 * camera.zoom;
+			return camera.target.y - (float)window.GetHeight() / 2 * camera.zoom;
 		case Edge::BOTTOM:
-			return camera.target.y + window.GetHeight() / 2 * camera.zoom;
+			return camera.target.y + (float)window.GetHeight() / 2 * camera.zoom;
 		default:
 			return camera.target.x;
 	}
@@ -250,16 +250,14 @@ public:
 		}
 		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED) {
 			if (scale > scaleDefault) {
-				scale = EaseBounceOut(elapsedTime, scaleTarget,
-															scaleDefault - scaleTarget, scaleDuration);
+				scale = EaseBounceOut(elapsedTime, scaleTarget, scaleDefault - scaleTarget, scaleDuration);
 				elapsedTime += delta;
 			} else {
 				buttonEvent = ButtonEvent::FINISHED_ANIM_RELEASED;
 			}
 		} else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED) {
 			if (scale < scaleTarget) {
-				scale = EaseBounceOut(elapsedTime, scaleDefault,
-															scaleTarget - scaleDefault, scaleDuration);
+				scale = EaseBounceOut(elapsedTime, scaleDefault, scaleTarget - scaleDefault, scaleDuration);
 				elapsedTime += delta;
 			} else {
 				buttonEvent = ButtonEvent::FINISHED_ANIM_PRESSED;
@@ -384,7 +382,7 @@ int main() {
 
 	Player player(LoadTexture("assets/player/cube.png"), raylib::Vector2{25.0, 0.0});
 
-	raylib::Camera2D playerCamera;
+	raylib::Camera2D playerCamera(VECTOR2_ZERO, VECTOR2_ZERO);
 	playerCamera.target = player.position;
 	float winSizeZoomMultiplier = 1.0;
 
@@ -421,11 +419,6 @@ int main() {
 			winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
 		}
 
-		garageButton.RefreshButtonScale(deltaTime, winSizeCamera);
-		playButton.RefreshButtonScale(deltaTime, winSizeCamera);
-		createButton.RefreshButtonScale(deltaTime, winSizeCamera);
-		fader.RefreshFade(deltaTime);
-
 		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
 			playButton.IsHovered(winSizeCamera) &&
 			fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
@@ -435,7 +428,7 @@ int main() {
 		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED &&
 			fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
 		{
-			currentScreen = CurrentScreen::LEVEL_SELECTOR;
+			currentScreen = CurrentScreen::IN_LEVEL;
 			fader.FadeOut(0.25f);
 			playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
 		}
@@ -451,6 +444,9 @@ int main() {
 			{
 				menuLoop.Play();
 			}
+			garageButton.RefreshButtonScale(deltaTime, winSizeCamera);
+			playButton.RefreshButtonScale(deltaTime, winSizeCamera);
+			createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 			logo.position.x = logo.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
 			groundLine.position.x = groundLine.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
 			garageButton.position = garageButton.MoveToWinPercentage(raylib::Vector2{0.35f, 0.5f});
@@ -461,7 +457,7 @@ int main() {
 			player.UpdatePlayer(deltaTime);
 			break;
 		}
-
+		fader.RefreshFade(deltaTime);
 		// Draw
 		BeginDrawing();
 		switch (currentScreen) {
@@ -496,14 +492,12 @@ int main() {
 			BeginMode2D(playerCamera);
 			ClearBackground(WHITE);
 			player.Draw();
-			textColor.DrawText("Congrats! You created your first window!", 190, 200, 20);
 			EndMode2D();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
 			ClearBackground(WHITE);
 			BeginMode2D(winSizeCamera);
-			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25,
-							 GetMonitorHeight(GetCurrentMonitor()) / 2 - 25, 50, BLACK);
+			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25, GetMonitorHeight(GetCurrentMonitor()) / 2 - 25, 50, BLACK);
 			EndMode2D();
 			break;
 		default:
