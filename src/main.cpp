@@ -414,10 +414,10 @@ int main() {
 		ground.position.x -= 750 * deltaTime;
 		ground.position.x = fmodf(ground.position.x, ground.texture.width * ground.scale);
 
-		if (IsKeyPressed(KEY_F11))
-		{
-			winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
-		}
+		// if (IsKeyPressed(KEY_F11))
+		// {
+		// 	winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
+		// }
 
 		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
 			playButton.IsHovered(winSizeCamera) &&
@@ -462,7 +462,7 @@ int main() {
 		BeginDrawing();
 		switch (currentScreen) {
 		case CurrentScreen::TITLE:
-			BeginMode2D(winSizeCamera);
+			// BeginMode2D(winSizeCamera);
 			ClearBackground(WHITE);
 			background.Draw();
 			background.Draw(raylib::Vector2{
@@ -486,7 +486,7 @@ int main() {
 			garageButton.Draw();
 			playButton.Draw();
 			createButton.Draw();
-			EndMode2D();
+			// EndMode2D();
 			break;
 		case CurrentScreen::IN_LEVEL:
 			BeginMode2D(playerCamera);
@@ -496,9 +496,9 @@ int main() {
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
 			ClearBackground(WHITE);
-			BeginMode2D(winSizeCamera);
+			// BeginMode2D(winSizeCamera);
 			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25, GetMonitorHeight(GetCurrentMonitor()) / 2 - 25, 50, BLACK);
-			EndMode2D();
+			// EndMode2D();
 			break;
 		default:
 			ClearBackground(WHITE);
