@@ -7,7 +7,8 @@ A Geometry Dash remake made with Raylib.
 
 ## How to play the game
 
-~~Head to the Actions tab and download the latest buildartifact.~~
+~~Head to the Actions tab and download the latest build artifact.~~
+
 The GitHub workflows used to automate building of the game does not work. If you know how workflows work and know how to fix it, feel free to open a PR.
 
 ## Build Instructions
