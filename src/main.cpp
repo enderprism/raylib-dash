@@ -1,21 +1,23 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
-#include <reasings.h>
+#include "reasings.h"
 
 #define FRAMERATE 60
+#define MONITOR GetCurrentMonitor()
 #define SHOW_BOXES false
-#define VECTOR2_ZERO raylib::Vector2 { 0.0f, 0.0f }
 
-class Sprite {
+class Sprite
+{
 public:
 	raylib::Texture2D texture;
 	raylib::Rectangle debugRect;
 	raylib::Color rectColor;
 	raylib::Vector2 position;
-	float scale;            // Scale as a float (equal X and Y scale).
+	float scale;			// Scale as a float (equal X and Y scale).
 	raylib::Vector2 scaleV; // Scale as a raylib::Vector2.
 	float rotation;
 	raylib::Color tint;
+	raylib::Vector2 flip = raylib::Vector2{1.0f, 1.0f};
 
 	Sprite(Texture2D self_texture, raylib::Vector2 self_position = raylib::Vector2{0.0, 0.0}, float self_scale = 1.0f, float self_rotation = 0.0f, raylib::Color self_tint = WHITE)
 		: texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
@@ -25,40 +27,36 @@ public:
 		rectColor = raylib::Color((GetRandomValue(0, 255)), (GetRandomValue(0, 255)), (GetRandomValue(0, 255)), 50);
 		// rectColor = raylib::Color(0xff000088);
 	};
-	void Draw() {
+	void Draw()
+	{
 		scaleV = raylib::Vector2{scale, scale};
 		debugRect.SetPosition(position);
 		debugRect.SetWidth(texture.GetWidth() * abs(scale));
 		debugRect.SetHeight(texture.GetHeight() * abs(scale));
-		if (scale < 0) {
+		if (scale < 0)
+		{
 			debugRect.x -= texture.width * abs(scale);
 			debugRect.y -= texture.height * abs(scale);
 		}
-		texture.Draw
-		(
+		texture.Draw(
 			// sourceRec
-			raylib::Rectangle
-			{
+			raylib::Rectangle{
 				0.0f, 0.0f,
-				(float)texture.GetWidth(),
-				(float)texture.GetHeight()
-			},
+				(float)texture.GetWidth() * flip.x,
+				(float)texture.GetHeight() * flip.y},
 			// destRec
-			raylib::Rectangle
-			{
-				position.x + (float)texture.GetWidth() / 2,
-				position.y + (float)texture.GetHeight() / 2,
+			raylib::Rectangle{
+				position.x + (float)texture.GetWidth() / 2 * scaleV.x,
+				position.y + (float)texture.GetHeight() / 2 * scaleV.y,
 				scaleV.x * (float)texture.GetWidth(),
 				scaleV.y * (float)texture.GetHeight()},
-			raylib::Vector2
-			{
-				(float)texture.GetWidth() / 2,
-				(float)texture.GetHeight() / 2
-			},
-			rotation, tint
-		);
-		// std::cout << position.x << std::endl; // DEBUG
-		if (SHOW_BOXES) {
+			// origin x&y
+			raylib::Vector2{
+				(float)texture.GetWidth() / 2 * scaleV.x,
+				(float)texture.GetHeight() / 2 * scaleV.y},
+			rotation, tint);
+		if (SHOW_BOXES)
+		{
 			debugRect.Draw(rectColor);
 		}
 	};
@@ -68,35 +66,87 @@ public:
 		{
 			drawPosition.y = position.y;
 		}
-		debugRect.SetPosition(position);
-		debugRect.SetWidth(texture.GetWidth() * scale);
-		debugRect.SetHeight(texture.GetHeight() * scale);
-		texture.Draw(drawPosition, rotation, scale, tint);
-		if (SHOW_BOXES) { debugRect.Draw(rectColor); }
+		scaleV = raylib::Vector2{scale, scale};
+		debugRect.SetPosition(drawPosition);
+		debugRect.SetWidth(texture.GetWidth() * abs(scale));
+		debugRect.SetHeight(texture.GetHeight() * abs(scale));
+		if (scale < 0)
+		{
+			debugRect.x -= texture.width * abs(scale);
+			debugRect.y -= texture.height * abs(scale);
+		}
+		texture.Draw(
+			// sourceRec
+			raylib::Rectangle{
+				0.0f, 0.0f,
+				(float)texture.GetWidth() * flip.x,
+				(float)texture.GetHeight() * flip.y},
+			// destRec
+			raylib::Rectangle{
+				drawPosition.x + (float)texture.GetWidth() / 2 * scaleV.x,
+				drawPosition.y + (float)texture.GetHeight() / 2 * scaleV.y,
+				scaleV.x * (float)texture.GetWidth(),
+				scaleV.y * (float)texture.GetHeight()},
+			// origin x&y
+			raylib::Vector2{
+				(float)texture.GetWidth() / 2 * scaleV.x,
+				(float)texture.GetHeight() / 2 * scaleV.y},
+			rotation, tint);
+		if (SHOW_BOXES)
+		{
+			debugRect.Draw(rectColor);
+		}
 	};
-	void Draw(raylib::Vector2 drawPosition, float drawRotation) {
+	void Draw(raylib::Vector2 drawPosition, float drawRotation)
+	{
 		if (drawPosition.y == 0 && position.y != 0.0)
 		{
 			drawPosition.y = position.y;
 		}
-		debugRect.SetPosition(position);
-		debugRect.SetWidth(texture.GetWidth() * scale);
-		debugRect.SetHeight(texture.GetHeight() * scale);
-		texture.Draw(drawPosition, drawRotation, scale, tint);
-		if (SHOW_BOXES) {
+		scaleV = raylib::Vector2{scale, scale};
+		debugRect.SetPosition(drawPosition);
+		debugRect.SetWidth(texture.GetWidth() * abs(scale));
+		debugRect.SetHeight(texture.GetHeight() * abs(scale));
+		if (scale < 0)
+		{
+			debugRect.x -= texture.width * abs(scale);
+			debugRect.y -= texture.height * abs(scale);
+		}
+		texture.Draw(
+			// sourceRec
+			raylib::Rectangle{
+				0.0f, 0.0f,
+				(float)texture.GetWidth() * flip.x,
+				(float)texture.GetHeight() * flip.y},
+			// destRec
+			raylib::Rectangle{
+				drawPosition.x + ((float)texture.GetWidth() / 2) * scaleV.x,
+				drawPosition.y + ((float)texture.GetHeight() / 2) * scaleV.y,
+				scaleV.x * (float)texture.GetWidth(),
+				scaleV.y * (float)texture.GetHeight()},
+			// origin x&y
+			raylib::Vector2{
+				(float)texture.GetWidth() / 2 * scaleV.x,
+				(float)texture.GetHeight() / 2 * scaleV.y},
+			drawRotation, tint);
+		if (SHOW_BOXES)
+		{
 			debugRect.Draw(rectColor);
 		}
 	};
-	bool IsHovered(raylib::Camera2D& camera) {
+	bool IsHovered(raylib::Camera2D &camera)
+	{
 		raylib::Rectangle translatedRect = raylib::Rectangle{
-				GetWorldToScreen2D(position, camera).x,
-				GetWorldToScreen2D(position, camera).y,
-				static_cast<float>(texture.width) * camera.GetZoom(),
-				static_cast<float>(texture.height) * camera.GetZoom()
-				};
-		if (translatedRect.CheckCollision(GetMousePosition())) {
+			GetWorldToScreen2D(position, camera).x,
+			GetWorldToScreen2D(position, camera).y,
+			static_cast<float>(texture.width) * camera.GetZoom(),
+			static_cast<float>(texture.height) * camera.GetZoom()};
+		if (translatedRect.CheckCollision(GetMousePosition()))
+		{
 			return true;
-		} else {
+		}
+		else
+		{
 			return false;
 		}
 	};
@@ -109,71 +159,70 @@ public:
 
 raylib::Vector2 Sprite::GetCenter()
 {
-	return raylib::Vector2
-	{
-			position.x + static_cast<float>(texture.width) * scale * 0.5f,
-			position.y + static_cast<float>(texture.height) * scale * 0.5f
-	};
+	return raylib::Vector2{
+		position.x + static_cast<float>(texture.width) * scale * 0.5f,
+		position.y + static_cast<float>(texture.height) * scale * 0.5f};
 }
 
 // Get percentage of the width and height of the game window from the sprite's position, width, height and scale.
 raylib::Vector2 Sprite::GetWinPercentage()
 {
-	int monitor = GetCurrentMonitor();
-	return raylib::Vector2
-	{
-		GetCenter().x / GetMonitorWidth(monitor),
-		GetCenter().y / GetMonitorHeight(monitor)
-	};
+	return raylib::Vector2{
+		GetCenter().x / GetMonitorWidth(MONITOR),
+		GetCenter().y / GetMonitorHeight(MONITOR)};
 }
 
 // Get percentage of the width and height of the game window from the sprite's position, width, height and scale.
 raylib::Vector2 Sprite::GetWinPercentage(raylib::Rectangle rec)
 {
-	return raylib::Vector2
-	{
+	return raylib::Vector2{
 		GetCenter().x / rec.width,
-		GetCenter().y / rec.height
-	};
+		GetCenter().y / rec.height};
 }
 
 // Move Sprite to percentage of the width and height of the game window.
-raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage) {
-	int monitor = GetCurrentMonitor();
-	return raylib::Vector2
-	{
-		(GetMonitorWidth(monitor) * percentage.x) - (texture.width / 2) * scale,
-		(GetMonitorHeight(monitor) * percentage.y) - (texture.height / 2) * scale
-	};
+raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage)
+{
+	return raylib::Vector2{
+		(GetMonitorWidth(MONITOR) * percentage.x) - (texture.width / 2) * scale,
+		(GetMonitorHeight(MONITOR) * percentage.y) - (texture.height / 2) * scale};
 }
 
 // Move Sprite to percentage of the width and height of the specified Rectangle.
-raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec) {
-	return raylib::Vector2
-	{
+raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec)
+{
+	return raylib::Vector2{
 		(rec.width * percentage.x) - (texture.width / 2) * scale,
-		(rec.height * percentage.y) - (texture.height / 2) * scale
-	};
+		(rec.height * percentage.y) - (texture.height / 2) * scale};
 }
 
-enum class Edge { LEFT, RIGHT, TOP, BOTTOM };
+enum class Edge
+{
+	LEFT,
+	RIGHT,
+	TOP,
+	BOTTOM
+};
 
-int GetEdge(const raylib::Camera2D& camera, const raylib::Window &window, Edge edge) {
-	switch (edge) {
-		case Edge::LEFT:
-			return camera.target.x - (float)window.GetWidth() / 2 * camera.zoom;
-		case Edge::RIGHT:
-			return camera.target.x + (float)window.GetWidth() / 2 * camera.zoom;
-		case Edge::TOP:
-			return camera.target.y - (float)window.GetHeight() / 2 * camera.zoom;
-		case Edge::BOTTOM:
-			return camera.target.y + (float)window.GetHeight() / 2 * camera.zoom;
-		default:
-			return camera.target.x;
+int GetEdge(const raylib::Camera2D &camera, const raylib::Window &window, Edge edge)
+{
+	switch (edge)
+	{
+	case Edge::LEFT:
+		return camera.target.x - (float)window.GetWidth() / 2 * camera.zoom;
+	case Edge::RIGHT:
+		return camera.target.x + (float)window.GetWidth() / 2 * camera.zoom;
+	case Edge::TOP:
+		return camera.target.y - (float)window.GetHeight() / 2 * camera.zoom;
+	case Edge::BOTTOM:
+		return camera.target.y + (float)window.GetHeight() / 2 * camera.zoom;
+	default:
+		return camera.target.x;
 	}
 }
 
-class ParallaxSprite : public Sprite {
+class ParallaxSprite : public Sprite
+{
 public:
 	using Sprite::Sprite;
 	void SetParallaxFactor(float factor) { parallaxFactor = factor; };
@@ -183,83 +232,113 @@ private:
 	float parallaxFactor;
 };
 
-class Player : public Sprite {
+class Player : public Sprite
+{
 public:
 	raylib::Vector2 speed{625.0, 20.0};
 	raylib::Vector2 velocity;
 	bool isPlatformer = true;
 	raylib::Vector2 direction;
+	int horizontal_direction = 1; // -1 = left, 1 = right
+	int jump_direction;
 	const float gravity = 5000;
-	const float friction = 625;
+	const float friction = 50;
 	using Sprite::Sprite;
 	void UpdatePlayer(float delta);
 };
 
-void Player::UpdatePlayer(float delta) {
+void Player::UpdatePlayer(float delta)
+{
 	// Get direction
-
-	direction.x = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
+	if (isPlatformer)
+	{
+		direction.x = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
+		horizontal_direction = direction.x;
+	}
+	else
+	{
+		direction.x = horizontal_direction;
+	}
 
 	// Friction calculation
 
-	if (direction.x != 0.0) {
+	if (direction.x != 0.0)
+	{
 		velocity.x = direction.x * speed.x * delta;
+		flip.x = direction.x;
 	}
-	if (direction.x == 0) {
+	if (direction.x == 0)
+	{
 		// Threshold is set to 1 pixel because there are no sub-pixel movements
-		if (velocity.x > 1) {
+		if (velocity.x > 1)
+		{
 			velocity.x -= friction * delta;
-		} else if (velocity.x < -1) {
+		}
+		else if (velocity.x < -1)
+		{
 			velocity.x += friction * delta;
-		} else {
+		}
+		else
+		{
 			velocity.x = 0;
 		}
 	}
 	position.x += velocity.x;
 };
 
-class SpriteButton : public Sprite {
+class SpriteButton : public Sprite
+{
 private:
 	float scaleDefault = 1.0f;
-	float scaleTarget = 1.2f;   // Target scale when the button is pressed
+	float scaleTarget = 1.2f;	// Target scale when the button is pressed
 	float scaleDuration = 0.2f; // Duration of the scale animation
 	float elapsedTime;
 
 public:
 	using Sprite::Sprite;
 	void ResetElapsedTime() { elapsedTime = 0.0f; };
-	enum class ButtonEvent {
-		IDLE, // Only used when initializing the ButtonEvent to avoid triggering a
-					// press or release.
-		IN_ANIM_PRESSED,       // Is currently in the press animation.
-		IN_ANIM_RELEASED,      // Is currently in the release animation.
+	enum class ButtonEvent
+	{
+		IDLE,				   // Only used when initializing the ButtonEvent to avoid triggering a press or release.
+		IN_ANIM_PRESSED,	   // Is currently in the press animation.
+		IN_ANIM_RELEASED,	   // Is currently in the release animation.
 		FINISHED_ANIM_PRESSED, // Has finished the press animation (idle).
 		FINISHED_ANIM_RELEASED // Has finished the release animation (idle).
 	};
 	ButtonEvent buttonEvent;
-	void RefreshButtonScale(float delta, raylib::Camera2D &camera) {
-		if (IsHovered(camera) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+	void RefreshButtonScale(float delta, raylib::Camera2D &camera)
+	{
+		if (IsHovered(camera) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
 			buttonEvent = ButtonEvent::IN_ANIM_PRESSED;
 			elapsedTime = 0.0f;
 		}
-		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-				(buttonEvent == ButtonEvent::IN_ANIM_PRESSED ||
-				 buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED)) {
+		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && (buttonEvent == ButtonEvent::IN_ANIM_PRESSED || buttonEvent == ButtonEvent::FINISHED_ANIM_PRESSED))
+		{
 			buttonEvent = ButtonEvent::IN_ANIM_RELEASED;
 			elapsedTime = 0.0f;
 		}
-		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED) {
-			if (scale > scaleDefault) {
+		if (buttonEvent == ButtonEvent::IN_ANIM_RELEASED)
+		{
+			if (scale > scaleDefault)
+			{
 				scale = EaseBounceOut(elapsedTime, scaleTarget, scaleDefault - scaleTarget, scaleDuration);
 				elapsedTime += delta;
-			} else {
+			}
+			else
+			{
 				buttonEvent = ButtonEvent::FINISHED_ANIM_RELEASED;
 			}
-		} else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED) {
-			if (scale < scaleTarget) {
+		}
+		else if (buttonEvent == ButtonEvent::IN_ANIM_PRESSED)
+		{
+			if (scale < scaleTarget)
+			{
 				scale = EaseBounceOut(elapsedTime, scaleDefault, scaleTarget - scaleDefault, scaleDuration);
 				elapsedTime += delta;
-			} else {
+			}
+			else
+			{
 				buttonEvent = ButtonEvent::FINISHED_ANIM_PRESSED;
 			}
 		}
@@ -276,21 +355,23 @@ private:
 	int alphaTarget = 255;
 	float fadeDuration = 0.5f;
 	float elapsedTime;
+
 public:
 	int GetAlpha() { return alpha; };
-	enum class FadeEvent {
-		IDLE,       // Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
-		FADING_IN,  // Is currently fading in.
+	enum class FadeEvent
+	{
+		IDLE,		// Only used when initializing the FadeEvent to avoid triggering a fade-in or fade-out.
+		FADING_IN,	// Is currently fading in.
 		FADING_OUT, // Is currently fading out.
-		FADED_IN,   // Has finished fading in (idle).
-		FADED_OUT   // Has finished fading out (idle).
+		FADED_IN,	// Has finished fading in (idle).
+		FADED_OUT	// Has finished fading out (idle).
 	};
 	FadeEvent fadeEvent;
-	FadeScreen(raylib::Color self_color) : color(self_color)
+	FadeScreen(raylib::Color self_color)
+		: color(self_color)
 	{
-		int monitor = GetCurrentMonitor();
 		rec.SetPosition(0.0f, 0.0f);
-		rec.SetSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+		rec.SetSize(GetMonitorWidth(MONITOR), GetMonitorHeight(MONITOR));
 	};
 	void Draw()
 	{
@@ -338,7 +419,45 @@ public:
 	}
 };
 
-enum class CurrentScreen {
+class PlayerCamera
+{
+private:
+	raylib::Camera2D camera = raylib::Camera2D{Vector2Zero(), Vector2Zero()};
+
+public:
+	raylib::Camera2D GetCamera() { return camera; }
+	raylib::Vector2 target;
+	raylib::Vector2 offset;
+	raylib::Vector2 static_axes = Vector2Zero();
+	Player &player;
+	float zoom;
+	float rotation; // in degrees
+	PlayerCamera(Player &self_player)
+		: player(self_player){};
+	void UpdateCamera()
+	{
+		// TODO Implement proper camera lerping and static
+		if (static_axes == Vector2Zero())
+		{
+
+			camera.target = Vector2Lerp(
+				camera.target,
+				player.GetCenter() - raylib::Vector2{(float)GetMonitorWidth(MONITOR) / 2, (float)GetMonitorHeight(MONITOR) / 2},
+				0.5f);
+			// camera.target = player.position;
+			// camera.offset = raylib::Vector2{0.0f, 0.0f};
+
+			// camera.offset = raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f};
+			camera.offset = Vector2Lerp(
+				camera.offset,
+				raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f},
+				0.5f);
+		}
+	};
+};
+
+enum class CurrentScreen
+{
 	TITLE,
 	SETTINGS,
 	LEVEL_SELECTOR,
@@ -347,14 +466,16 @@ enum class CurrentScreen {
 
 float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, float delta)
 {
-	int monitor = GetCurrentMonitor();
-	if (window->IsFullscreen()) {
+	if (window->IsFullscreen())
+	{
 		window->ToggleFullscreen();
 		window->SetSize(winWidth, winHeight);
 		// return the camera zoom multiplier
-		return static_cast<float>(winWidth) / static_cast<float>(GetMonitorWidth(monitor));
-	} else {
-		window->SetSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+		return static_cast<float>(winWidth) / static_cast<float>(GetMonitorWidth(MONITOR));
+	}
+	else
+	{
+		window->SetSize(GetMonitorWidth(MONITOR), GetMonitorHeight(MONITOR));
 		WaitTime(delta);
 		PollInputEvents();
 		window->ToggleFullscreen();
@@ -363,7 +484,8 @@ float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, f
 	}
 }
 
-int main() {
+int main()
+{
 	// Initialization
 	int screenWidth = 1280;
 	int screenHeight = 720;
@@ -382,14 +504,14 @@ int main() {
 
 	Player player(LoadTexture("assets/player/cube.png"), raylib::Vector2{25.0, 0.0});
 
-	raylib::Camera2D playerCamera(VECTOR2_ZERO, VECTOR2_ZERO);
+	PlayerCamera playerCamera(player);
 	playerCamera.target = player.position;
 	float winSizeZoomMultiplier = 1.0;
 
 	// We use this camera to render zoom when changing the size of the window.
 	// This camera is used when the playerCamera is not in use.
 	// Otherwise, this is handled by playerCamera.
-	raylib::Camera2D winSizeCamera(VECTOR2_ZERO, VECTOR2_ZERO);
+	raylib::Camera2D winSizeCamera(Vector2Zero(), Vector2Zero());
 
 	Sprite logo(LoadTexture("assets/gui/logo.png"), raylib::Vector2{0.0f, 150.0f}, 1.0f);
 	Sprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
@@ -419,9 +541,7 @@ int main() {
 		// 	winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
 		// }
 
-		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
-			playButton.IsHovered(winSizeCamera) &&
-			fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED && playButton.IsHovered(winSizeCamera) && fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
 		{
 			fader.FadeIn(0.25f);
 		}
@@ -433,6 +553,7 @@ int main() {
 			playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
 		}
 
+		// playerCamera.target = player.position - raylib::Vector2{(float)GetMonitorWidth(MONITOR)/2, (float)GetMonitorHeight(MONITOR)/2};
 		// TODO: Add a camera system.
 		playerCamera.zoom = winSizeZoomMultiplier;
 		winSizeCamera.zoom = winSizeZoomMultiplier;
@@ -455,30 +576,29 @@ int main() {
 			break;
 		case CurrentScreen::IN_LEVEL:
 			player.UpdatePlayer(deltaTime);
+			playerCamera.UpdateCamera();
+			menuLoop.Stop();
 			break;
 		}
 		fader.RefreshFade(deltaTime);
 		// Draw
 		BeginDrawing();
-		switch (currentScreen) {
+		switch (currentScreen)
+		{
 		case CurrentScreen::TITLE:
 			// BeginMode2D(winSizeCamera);
 			ClearBackground(WHITE);
 			background.Draw();
-			background.Draw(raylib::Vector2{
-					background.position.x + background.texture.width * background.scale});
-			background.Draw(
-					raylib::Vector2{background.position.x + background.texture.width * 2 * background.scale});
+			background.Draw(raylib::Vector2{background.position.x + background.texture.width * background.scale});
+			background.Draw(raylib::Vector2{background.position.x + background.texture.width * 2 * background.scale});
 			ground.Draw();
 			ground.Draw(raylib::Vector2{ground.position.x + ground.texture.width * ground.scale});
 			groundShadow.Draw();
 			groundShadow.Draw(
 				raylib::Vector2{
-					static_cast<float>(GetMonitorWidth(GetCurrentMonitor())),
-					ground.position.y + groundShadow.texture.height * groundShadow.scale
-				},
-				180.0f
-			);
+					(float)(GetMonitorWidth(MONITOR)) - groundShadow.texture.width * groundShadow.scale,
+					ground.position.y},
+				180.0f);
 			BeginBlendMode(BLEND_ADDITIVE);
 			groundLine.Draw();
 			EndBlendMode();
@@ -489,15 +609,15 @@ int main() {
 			// EndMode2D();
 			break;
 		case CurrentScreen::IN_LEVEL:
-			BeginMode2D(playerCamera);
 			ClearBackground(WHITE);
+			playerCamera.GetCamera().BeginMode();
 			player.Draw();
-			EndMode2D();
+			playerCamera.GetCamera().EndMode();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
 			ClearBackground(WHITE);
 			// BeginMode2D(winSizeCamera);
-			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25, GetMonitorHeight(GetCurrentMonitor()) / 2 - 25, 50, BLACK);
+			DrawText("[LEVEL SELECTOR]", 1920 / 2 - 10 * 25, GetMonitorHeight(MONITOR) / 2 - 25, 50, BLACK);
 			// EndMode2D();
 			break;
 		default:
