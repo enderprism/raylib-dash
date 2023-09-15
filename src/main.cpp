@@ -223,13 +223,37 @@ int GetEdge(const raylib::Camera2D &camera, const raylib::Window &window, Edge e
 
 class ParallaxSprite : public Sprite
 {
+private:
+	float parallaxFactor = 0.0f;
+	float previousCameraX = 0.0f;
+	float deltaCameraX = 0.0f;
+
 public:
 	using Sprite::Sprite;
 	void SetParallaxFactor(float factor) { parallaxFactor = factor; };
 	float GetParallaxFactor() { return parallaxFactor; };
+	void UpdateParallax(raylib::Camera2D &camera)
+	{
+		// Actual parallax code
+		if (parallaxFactor != 0.0f)
+		{
+			position.x += deltaCameraX * parallaxFactor;
+			deltaCameraX = camera.target.x - previousCameraX;
+			previousCameraX = camera.target.x;
+		}
 
-private:
-	float parallaxFactor;
+		// Scroll the background if it overflows, to give the impression of an infinite background.
+		if ((position.x + texture.width * scaleV.x) < camera.GetScreenToWorld(Vector2Zero()).x)
+		{
+			position.x += (texture.width * scaleV.x);
+		}
+		if (position.x > camera.GetScreenToWorld(raylib::Vector2{(float)GetMonitorWidth(MONITOR), 0.0f}).x)
+		{
+			std::cout << "1: " << position.x << std::endl;
+			position.x -= (texture.width * scaleV.x);
+			std::cout << "2: " << position.x << std::endl;
+		}
+	};
 };
 
 class Player : public Sprite
@@ -297,6 +321,11 @@ private:
 public:
 	using Sprite::Sprite;
 	void ResetElapsedTime() { elapsedTime = 0.0f; };
+	void InitScale()
+	{
+		scaleDefault *= scale;
+		scaleTarget *= scale;
+	}
 	enum class ButtonEvent
 	{
 		IDLE,				   // Only used when initializing the ButtonEvent to avoid triggering a press or release.
@@ -422,36 +451,64 @@ public:
 class PlayerCamera
 {
 private:
-	raylib::Camera2D camera = raylib::Camera2D{Vector2Zero(), Vector2Zero()};
+	const float MAX_HEIGHT = 225.0f;
+	const float MIN_HEIGHT = -5000.0f;
+	const float MAX_DIST = 200.0f; // Max vertical distance from the player.
+	float dist;					   // Camera's vertical distance from the player.
+	bool freefly = true;
 
 public:
+	raylib::Camera2D camera = raylib::Camera2D{Vector2Zero(), Vector2Zero()};
 	raylib::Camera2D GetCamera() { return camera; }
+	// TODO Will need to add a bool to determine if the target is the player or a static position.
 	raylib::Vector2 target;
 	raylib::Vector2 offset;
-	raylib::Vector2 static_axes = Vector2Zero();
+	bool is_static_x = false;
+	bool is_static_y = false;
 	Player &player;
 	float zoom;
 	float rotation; // in degrees
 	PlayerCamera(Player &self_player)
 		: player(self_player){};
+	raylib::Vector2 GetCenter()
+	{
+		return raylib::Vector2{
+			camera.target.x - camera.offset.x + GetMonitorWidth(MONITOR) / 2,
+			camera.target.y - camera.offset.y + GetMonitorHeight(MONITOR) / 2,
+		};
+	}
 	void UpdateCamera()
 	{
 		// TODO Implement proper camera lerping and static
-		if (static_axes == Vector2Zero())
+		dist = player.GetCenter().y - GetCenter().y;
+		if (!is_static_x)
 		{
-
-			camera.target = Vector2Lerp(
-				camera.target,
-				player.GetCenter() - raylib::Vector2{(float)GetMonitorWidth(MONITOR) / 2, (float)GetMonitorHeight(MONITOR) / 2},
+			camera.target.x = Lerp(
+				camera.target.x,
+				player.GetCenter().x - (float)GetMonitorWidth(MONITOR) / 2,
 				0.5f);
-			// camera.target = player.position;
-			// camera.offset = raylib::Vector2{0.0f, 0.0f};
 
-			// camera.offset = raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f};
-			camera.offset = Vector2Lerp(
-				camera.offset,
-				raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f},
-				0.5f);
+			if (player.isPlatformer)
+			{
+				camera.offset = Vector2Lerp(
+					camera.offset,
+					raylib::Vector2{90.0f * (float)player.horizontal_direction, 0.0f},
+					0.1f);
+			}
+			else
+			{
+				camera.offset = Vector2Lerp(
+					camera.offset,
+					raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f},
+					0.05f);
+			}
+		}
+		if (!is_static_y && freefly && abs(dist) < MAX_DIST)
+		{
+			camera.target.y = Lerp(
+				camera.target.y,
+				Clamp(player.GetCenter().y - copysignf(1.0, dist), MIN_HEIGHT, MAX_HEIGHT),
+				0.1f);
 		}
 	};
 };
@@ -471,7 +528,7 @@ float SetWindowFullScreen(raylib::Window *window, int winWidth, int winHeight, f
 		window->ToggleFullscreen();
 		window->SetSize(winWidth, winHeight);
 		// return the camera zoom multiplier
-		return static_cast<float>(winWidth) / static_cast<float>(GetMonitorWidth(MONITOR));
+		return (float)(winWidth) / (float)(GetMonitorWidth(MONITOR));
 	}
 	else
 	{
@@ -490,6 +547,7 @@ int main()
 	int screenWidth = 1280;
 	int screenHeight = 720;
 
+	SetExitKey(KEY_NULL);
 	raylib::Color textColor(BLACK);
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	raylib::Window w(screenWidth, screenHeight, "Geometry Dash");
@@ -502,10 +560,6 @@ int main()
 	SetTargetFPS(FRAMERATE);
 	SetWindowFullScreen(&w, screenWidth, screenHeight, 0.1);
 
-	Player player(LoadTexture("assets/player/cube.png"), raylib::Vector2{25.0, 0.0});
-
-	PlayerCamera playerCamera(player);
-	playerCamera.target = player.position;
 	float winSizeZoomMultiplier = 1.0;
 
 	// We use this camera to render zoom when changing the size of the window.
@@ -514,49 +568,58 @@ int main()
 	raylib::Camera2D winSizeCamera(Vector2Zero(), Vector2Zero());
 
 	Sprite logo(LoadTexture("assets/gui/logo.png"), raylib::Vector2{0.0f, 150.0f}, 1.0f);
-	Sprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
-	Sprite ground(LoadTexture("assets/level/ground-long.png"), raylib::Vector2{0.0f, 900.0f}, 0.5f, 0.0f, raylib::Color{0x4a44ffff});
+	ParallaxSprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
+	ParallaxSprite ground(LoadTexture("assets/level/ground-long.png"), raylib::Vector2{0.0f, 900.0f}, 0.5f, 0.0f, raylib::Color{0x4a44ffff});
 	Sprite groundShadow(LoadTexture("assets/level/groundSquareShadow_001.png"), ground.position, 0.5f, 0.0f, raylib::Color{0xffffff88});
 	Sprite groundLine(LoadTexture("assets/level/floorLine_001.png"), raylib::Vector2{0.0f, ground.position.y}, 0.75f, 0.0f, raylib::Color{0xffffffff});
+	SpriteButton quitGameButton(LoadTexture("assets/gui/closeButton.png"));
 	SpriteButton garageButton(LoadTexture("assets/gui/iconSelectorButton.png"));
 	SpriteButton playButton(LoadTexture("assets/gui/levelSelectorButton.png"));
 	SpriteButton createButton(LoadTexture("assets/gui/levelCreateButton.png"));
+
+	quitGameButton.scale = 0.25f;
+	quitGameButton.InitScale();
+
+	Player player(LoadTexture("assets/player/cube.png"), raylib::Vector2{0.0f, 900.0f - 61.0f}, 0.5f);
+
+	PlayerCamera playerCamera(player);
+	playerCamera.target = player.position;
+
+	background.SetParallaxFactor(0.75f);
+	ground.SetParallaxFactor(0.0f);
 
 	FadeScreen fader(BLACK);
 	raylib::Music menuLoop("assets/sounds/soundEffects/menuLoop.mp3");
 
 	// Main game loop
-	while (!w.ShouldClose()) // Detect window close button or ESC key
+	while (!w.ShouldClose())
 	{
 		// Time elapsed since the last frame
 		float deltaTime = GetFrameTime();
 		menuLoop.Update();
-		background.position.x -= 250 * deltaTime;
-		background.position.x = fmodf(background.position.x, background.texture.width * background.scale);
-		ground.position.x -= 750 * deltaTime;
-		ground.position.x = fmodf(ground.position.x, ground.texture.width * ground.scale);
 
-		// if (IsKeyPressed(KEY_F11))
-		// {
-		// 	winSizeZoomMultiplier = SetWindowFullScreen(&w, screenWidth, screenHeight, deltaTime);
-		// }
+		if (quitGameButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED && quitGameButton.IsHovered(winSizeCamera) && fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
+		{
+			fader.FadeIn(0.25f);
+		}
+		if (quitGameButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED && fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
+		{
+			break;
+		}
 
 		if (playButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED && playButton.IsHovered(winSizeCamera) && fader.fadeEvent != FadeScreen::FadeEvent::FADING_IN)
 		{
 			fader.FadeIn(0.25f);
 		}
-		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED &&
-			fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
+		if (playButton.buttonEvent == SpriteButton::ButtonEvent::FINISHED_ANIM_RELEASED && fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
 		{
 			currentScreen = CurrentScreen::IN_LEVEL;
 			fader.FadeOut(0.25f);
 			playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
 		}
+		
 
-		// playerCamera.target = player.position - raylib::Vector2{(float)GetMonitorWidth(MONITOR)/2, (float)GetMonitorHeight(MONITOR)/2};
 		// TODO: Add a camera system.
-		playerCamera.zoom = winSizeZoomMultiplier;
-		winSizeCamera.zoom = winSizeZoomMultiplier;
 
 		switch (currentScreen)
 		{
@@ -565,18 +628,33 @@ int main()
 			{
 				menuLoop.Play();
 			}
+			background.position.x -= 250 * deltaTime;
+			background.position.x = fmodf(background.position.x, background.texture.width * background.scale);
+			ground.position.x -= 750 * deltaTime;
+			ground.position.x = fmodf(ground.position.x, ground.texture.width * ground.scale);
+			quitGameButton.RefreshButtonScale(deltaTime, winSizeCamera);
 			garageButton.RefreshButtonScale(deltaTime, winSizeCamera);
 			playButton.RefreshButtonScale(deltaTime, winSizeCamera);
 			createButton.RefreshButtonScale(deltaTime, winSizeCamera);
 			logo.position.x = logo.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
 			groundLine.position.x = groundLine.MoveToWinPercentage(raylib::Vector2{0.5f}).x;
+			quitGameButton.position = quitGameButton.MoveToWinPercentage(raylib::Vector2{GetMonitorHeight(MONITOR) * 0.05f / GetMonitorWidth(MONITOR), 0.05f});
 			garageButton.position = garageButton.MoveToWinPercentage(raylib::Vector2{0.35f, 0.5f});
 			playButton.position = playButton.MoveToWinPercentage(raylib::Vector2{0.5f, 0.5f});
 			createButton.position = createButton.MoveToWinPercentage(raylib::Vector2{0.65f, 0.5f});
+
 			break;
 		case CurrentScreen::IN_LEVEL:
 			player.UpdatePlayer(deltaTime);
 			playerCamera.UpdateCamera();
+			background.UpdateParallax(playerCamera.camera);
+			ground.UpdateParallax(playerCamera.camera);
+			groundLine.position = raylib::Vector2{
+				playerCamera.GetCenter().x - (groundLine.texture.width * groundLine.scaleV.x) / 2,
+				ground.position.y};
+			groundShadow.position = raylib::Vector2{
+				playerCamera.camera.target.x - playerCamera.camera.offset.x,
+				ground.position.y};
 			menuLoop.Stop();
 			break;
 		}
@@ -603,6 +681,7 @@ int main()
 			groundLine.Draw();
 			EndBlendMode();
 			logo.Draw();
+			quitGameButton.Draw();
 			garageButton.Draw();
 			playButton.Draw();
 			createButton.Draw();
@@ -611,7 +690,22 @@ int main()
 		case CurrentScreen::IN_LEVEL:
 			ClearBackground(WHITE);
 			playerCamera.GetCamera().BeginMode();
+			background.Draw(raylib::Vector2{background.position.x - background.texture.width * 2 * background.scaleV.x, background.position.y});
+			background.Draw(raylib::Vector2{background.position.x - background.texture.width * background.scaleV.x, background.position.y});
+			background.Draw();
+			background.Draw(raylib::Vector2{background.position.x + background.texture.width * background.scaleV.x, background.position.y});
+			background.Draw(raylib::Vector2{background.position.x + background.texture.width * 2 * background.scaleV.x, background.position.y});
 			player.Draw();
+			ground.Draw(raylib::Vector2{ground.position.x - ground.texture.width * ground.scaleV.x, ground.position.y});
+			ground.Draw();
+			ground.Draw(raylib::Vector2{ground.position.x + ground.texture.width * ground.scaleV.x, ground.position.y});
+			groundShadow.Draw();
+			groundShadow.Draw(
+				raylib::Vector2{
+					playerCamera.camera.target.x - playerCamera.camera.offset.x + (float)(GetMonitorWidth(MONITOR)) - groundShadow.texture.width * groundShadow.scaleV.x,
+					ground.position.y},
+				180.0f);
+			groundLine.Draw();
 			playerCamera.GetCamera().EndMode();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
