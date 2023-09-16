@@ -1,5 +1,6 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
+#include <tween.hpp>
 #include "reasings.h"
 
 #define FRAMERATE 60
@@ -226,6 +227,7 @@ class ParallaxSprite : public Sprite
 private:
 	float parallaxFactor = 0.0f;
 	float previousCameraX = 0.0f;
+	float previousOffsetX = 0.0f;
 	float deltaCameraX = 0.0f;
 
 public:
@@ -238,8 +240,9 @@ public:
 		if (parallaxFactor != 0.0f)
 		{
 			position.x += deltaCameraX * parallaxFactor;
-			deltaCameraX = camera.target.x - previousCameraX;
+			deltaCameraX = (camera.target.x - previousCameraX) - (camera.offset.x - previousOffsetX);
 			previousCameraX = camera.target.x;
+			previousOffsetX = camera.offset.x;
 		}
 
 		// Scroll the background if it overflows, to give the impression of an infinite background.
@@ -351,7 +354,7 @@ public:
 		{
 			if (scale > scaleDefault)
 			{
-				scale = EaseBounceOut(elapsedTime, scaleTarget, scaleDefault - scaleTarget, scaleDuration);
+				scale = Lerp(scaleTarget, scaleDefault, tween::bounceout(elapsedTime / scaleDuration));
 				elapsedTime += delta;
 			}
 			else
@@ -363,7 +366,7 @@ public:
 		{
 			if (scale < scaleTarget)
 			{
-				scale = EaseBounceOut(elapsedTime, scaleDefault, scaleTarget - scaleDefault, scaleDuration);
+				scale = Lerp(scaleDefault, scaleTarget, tween::bounceout(elapsedTime / scaleDuration));
 				elapsedTime += delta;
 			}
 			else
@@ -425,7 +428,7 @@ public:
 		{
 			if (alpha > alphaDefault)
 			{
-				alpha = EaseSineIn(elapsedTime, alphaTarget, alphaDefault - alphaTarget, fadeDuration);
+				alpha = Lerp(alphaTarget, alphaDefault, tween::sinein(elapsedTime / fadeDuration));
 				elapsedTime += delta;
 			}
 			else
@@ -437,7 +440,7 @@ public:
 		{
 			if (alpha < alphaTarget)
 			{
-				alpha = EaseSineIn(elapsedTime, alphaDefault, alphaTarget - alphaDefault, fadeDuration);
+				alpha = Lerp(alphaDefault, alphaTarget, tween::sinein(elapsedTime / fadeDuration));
 				elapsedTime += delta;
 			}
 			else
@@ -493,14 +496,14 @@ public:
 				camera.offset = Vector2Lerp(
 					camera.offset,
 					raylib::Vector2{90.0f * (float)player.horizontal_direction, 0.0f},
-					0.1f);
+					0.05f);
 			}
 			else
 			{
 				camera.offset = Vector2Lerp(
 					camera.offset,
 					raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f},
-					0.05f);
+					0.1f);
 			}
 		}
 		if (!is_static_y && freefly && abs(dist) < MAX_DIST)
@@ -617,7 +620,6 @@ int main()
 			fader.FadeOut(0.25f);
 			playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
 		}
-		
 
 		// TODO: Add a camera system.
 
@@ -705,8 +707,12 @@ int main()
 					playerCamera.camera.target.x - playerCamera.camera.offset.x + (float)(GetMonitorWidth(MONITOR)) - groundShadow.texture.width * groundShadow.scaleV.x,
 					ground.position.y},
 				180.0f);
+			BeginBlendMode(BLEND_ADDITIVE);
 			groundLine.Draw();
-			playerCamera.GetCamera().EndMode();
+			EndBlendMode();
+			z
+				playerCamera.GetCamera()
+					.EndMode();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
 			ClearBackground(WHITE);
