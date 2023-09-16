@@ -1,7 +1,6 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
 #include <tween.hpp>
-#include "reasings.h"
 
 #define FRAMERATE 60
 #define MONITOR GetCurrentMonitor()
@@ -710,9 +709,7 @@ int main()
 			BeginBlendMode(BLEND_ADDITIVE);
 			groundLine.Draw();
 			EndBlendMode();
-			z
-				playerCamera.GetCamera()
-					.EndMode();
+			playerCamera.GetCamera().EndMode();
 			break;
 		case CurrentScreen::LEVEL_SELECTOR:
 			ClearBackground(WHITE);
