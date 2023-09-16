@@ -1,6 +1,6 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
-#include <tween.hpp>
+#include "tween.hpp"
 
 #define FRAMERATE 60
 #define MONITOR GetCurrentMonitor()
