@@ -1,6 +1,6 @@
 <p align="center">
     <img src="assets/logo/raylib_dash-color.png" align="center" width="256"></img>
-    <h1 align="center">Godot Dash</h1>
+    <h1 align="center">Raylib Dash</h1>
 </p>
 
 A Geometry Dash remake made with [Raylib](https://www.raylib.com/).
@@ -36,6 +36,4 @@ $ make
 ```
 # Credits
 
-- "tween.hpp" by r-lyeh-archived
-
-  <https://github.com/r-lyeh-archived/tween>
+- "tween" header: <https://github.com/r-lyeh-archived/tween>
