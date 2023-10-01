@@ -35,5 +35,7 @@ $ make
 > mingw32-make
 ```
 # Credits
+
 "tween.hpp" by r-lyeh-archived
-https://github.com/r-lyeh-archived/tween
+
+<https://github.com/r-lyeh-archived/tween>
