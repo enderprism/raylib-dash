@@ -36,6 +36,6 @@ $ make
 ```
 # Credits
 
-"tween.hpp" by r-lyeh-archived
+- "tween.hpp" by r-lyeh-archived
 
-<https://github.com/r-lyeh-archived/tween>
+  <https://github.com/r-lyeh-archived/tween>
