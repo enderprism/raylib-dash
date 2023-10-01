@@ -184,16 +184,16 @@ raylib::Vector2 Sprite::GetWinPercentage(raylib::Rectangle rec)
 raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage)
 {
 	return raylib::Vector2{
-		(GetMonitorWidth(MONITOR) * percentage.x) - (texture.width / 2) * scale,
-		(GetMonitorHeight(MONITOR) * percentage.y) - (texture.height / 2) * scale};
+		(GetMonitorWidth(MONITOR) * percentage.x) - ((float)texture.width / 2) * scale,
+		(GetMonitorHeight(MONITOR) * percentage.y) - ((float)texture.height / 2) * scale};
 }
 
 // Move Sprite to percentage of the width and height of the specified Rectangle.
 raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec)
 {
 	return raylib::Vector2{
-		(rec.width * percentage.x) - (texture.width / 2) * scale,
-		(rec.height * percentage.y) - (texture.height / 2) * scale};
+		(rec.width * percentage.x) - ((float)texture.width / 2) * scale,
+		(rec.height * percentage.y) - ((float)texture.height / 2) * scale};
 }
 
 enum class Edge
@@ -261,14 +261,14 @@ public:
 class Player : public Sprite
 {
 public:
-	raylib::Vector2 speed{625.0, 20.0};
+	raylib::Vector2 speed{625.0f, 625.0f};
 	raylib::Vector2 velocity;
 	bool isPlatformer = true;
 	raylib::Vector2 direction;
 	int horizontal_direction = 1; // -1 = left, 1 = right
-	int jump_direction;
+	int jump_direction = 0;
 	const float gravity = 5000;
-	const float friction = 50;
+	const float friction = 625.0f;
 	using Sprite::Sprite;
 	void UpdatePlayer(float delta);
 };
@@ -310,6 +310,39 @@ void Player::UpdatePlayer(float delta)
 		}
 	}
 	position.x += velocity.x;
+
+	// DEBUG: Temporary top-down controls
+	// Get direction
+	if (isPlatformer)
+	{
+		direction.y = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
+		jump_direction = direction.y;
+		std::cout << direction.y << std::endl;
+	}
+
+	// Friction calculation
+
+	if (direction.y != 0.0)
+	{
+		velocity.y = direction.y * speed.y * delta;
+	}
+	if (direction.y == 0)
+	{
+		// Threshold is set to 1 pixel because there are no sub-pixel movements
+		if (velocity.y > 1)
+		{
+			velocity.y -= friction * delta;
+		}
+		else if (velocity.y < -1)
+		{
+			velocity.y += friction * delta;
+		}
+		else
+		{
+			velocity.y = 0;
+		}
+	}
+	position.y += velocity.y;
 };
 
 class SpriteButton : public Sprite
@@ -468,50 +501,80 @@ public:
 	bool is_static_x = false;
 	bool is_static_y = false;
 	Player &player;
-	float zoom;
-	float rotation; // in degrees
+	float zoom = 1.5f;
+	float rotation = 0.0f; // in degrees
 	PlayerCamera(Player &self_player)
-		: player(self_player){};
+		: player(self_player)
+	{
+		camera.target = player.GetCenter();
+		if (player.isPlatformer)
+		{
+			camera.offset = raylib::Vector2{(float)(GetMonitorWidth(MONITOR) / 2) + 90.0f * (float)player.horizontal_direction, (float)(GetMonitorHeight(MONITOR) / 2)};
+		}
+	};
 	raylib::Vector2 GetCenter()
 	{
-		return raylib::Vector2{
-			camera.target.x - camera.offset.x + GetMonitorWidth(MONITOR) / 2,
-			camera.target.y - camera.offset.y + GetMonitorHeight(MONITOR) / 2,
-		};
+		return camera.GetScreenToWorld(raylib::Vector2{
+			(float)GetMonitorWidth(MONITOR) / 2,
+			(float)GetMonitorHeight(MONITOR) / 2,
+		});
 	}
 	void UpdateCamera()
 	{
+		// TODO Make sure the "zoom around center" works well with camera rotation.
+		camera.zoom = zoom;
+		camera.rotation = rotation;
 		// TODO Implement proper camera lerping and static
 		dist = player.GetCenter().y - GetCenter().y;
 		if (!is_static_x)
 		{
-			camera.target.x = Lerp(
-				camera.target.x,
-				player.GetCenter().x - (float)GetMonitorWidth(MONITOR) / 2,
-				0.5f);
-
+			// camera.target = Vector2Lerp(
+			// 	camera.target,
+			// 	player.GetCenter(),
+			// 	0.5f);
+			camera.target.x = Lerp(camera.target.x, player.GetCenter().x, 0.5f);
 			if (player.isPlatformer)
 			{
 				camera.offset = Vector2Lerp(
 					camera.offset,
-					raylib::Vector2{90.0f * (float)player.horizontal_direction, 0.0f},
+					raylib::Vector2{(float)(GetMonitorWidth(MONITOR) / 2) + 90.0f * (float)player.horizontal_direction, (float)(GetMonitorHeight(MONITOR) / 2)},
 					0.05f);
+				// camera.offset.x = Lerp(
+				// 	camera.offset.x,
+				// 	(float)(GetMonitorWidth(MONITOR) / 2) + 90.0f * (float)player.horizontal_direction,
+				// 	0.05f);
 			}
 			else
 			{
 				camera.offset = Vector2Lerp(
 					camera.offset,
-					raylib::Vector2{-300.0f * (float)player.horizontal_direction, 0.0f},
+					raylib::Vector2{(float)(GetMonitorWidth(MONITOR) / 2) + (-300.0f * (float)player.horizontal_direction), (float)(GetMonitorHeight(MONITOR) / 2)},
 					0.1f);
 			}
 		}
-		if (!is_static_y && freefly && abs(dist) < MAX_DIST)
+		std::cout << abs(dist) << " " << MAX_DIST << std::endl;
+		if (!is_static_y && freefly && abs(dist) > MAX_DIST)
 		{
+			// camera.offset.y = Lerp(
+			// 	camera.offset.y,
+			// 	Clamp((float)(GetMonitorHeight(MONITOR) / 2) - copysignf(1.0, dist), MIN_HEIGHT, MAX_HEIGHT),
+			// 	0.1f);
+			// FIXME Fix the camera dist y offset thing
+			// std::cout << "should go to player\n";
 			camera.target.y = Lerp(
 				camera.target.y,
-				Clamp(player.GetCenter().y - copysignf(1.0, dist), MIN_HEIGHT, MAX_HEIGHT),
-				0.1f);
+				player.GetCenter().y,
+				0.03f);
 		}
+		camera.rotation = 0.0f;
+		if (camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y > MAX_HEIGHT)
+		{
+			camera.target.y -= camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y - MAX_HEIGHT;
+			// camera.offset.y = Lerp(camera.offset.y,
+			// 					   camera.offset.y + camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y - MAX_HEIGHT,
+			// 					   0.5f);
+		}
+		camera.rotation = rotation;
 	};
 };
 
@@ -589,6 +652,7 @@ int main()
 
 	background.SetParallaxFactor(0.75f);
 	ground.SetParallaxFactor(0.0f);
+	player.position.y = -64.0f;
 
 	FadeScreen fader(BLACK);
 	raylib::Music menuLoop("assets/sounds/soundEffects/menuLoop.mp3");
@@ -622,6 +686,19 @@ int main()
 
 		// TODO: Add a camera system.
 
+		if (IsKeyDown(KEY_B))
+		{
+			playerCamera.zoom += deltaTime * playerCamera.zoom;
+		}
+		if (IsKeyDown(KEY_N))
+		{
+			playerCamera.zoom -= deltaTime * playerCamera.zoom;
+		}
+		if (IsKeyDown(KEY_C))
+		{
+			playerCamera.rotation += 1.0f;
+		}
+
 		switch (currentScreen)
 		{
 		case CurrentScreen::TITLE:
@@ -646,6 +723,8 @@ int main()
 
 			break;
 		case CurrentScreen::IN_LEVEL:
+			ground.position.y = 0.0f;
+			background.position.y = ground.position.y - background.texture.height * background.scaleV.y;
 			player.UpdatePlayer(deltaTime);
 			playerCamera.UpdateCamera();
 			background.UpdateParallax(playerCamera.camera);
