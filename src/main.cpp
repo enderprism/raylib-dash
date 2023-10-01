@@ -6,6 +6,16 @@
 #define MONITOR GetCurrentMonitor()
 #define SHOW_BOXES false
 
+template <typename T>
+void UpdateValueOnce(T &variable, const T &value, bool &hasUpdatedValueOnce)
+{
+	if (!hasUpdatedValueOnce)
+	{
+		variable = value; // Update variable with value.
+	}
+	hasUpdatedValueOnce = true;
+}
+
 class Sprite
 {
 public:
@@ -221,43 +231,6 @@ int GetEdge(const raylib::Camera2D &camera, const raylib::Window &window, Edge e
 	}
 }
 
-class ParallaxSprite : public Sprite
-{
-private:
-	float parallaxFactor = 0.0f;
-	float previousCameraX = 0.0f;
-	float previousOffsetX = 0.0f;
-	float deltaCameraX = 0.0f;
-
-public:
-	using Sprite::Sprite;
-	void SetParallaxFactor(float factor) { parallaxFactor = factor; };
-	float GetParallaxFactor() { return parallaxFactor; };
-	void UpdateParallax(raylib::Camera2D &camera)
-	{
-		// Actual parallax code
-		if (parallaxFactor != 0.0f)
-		{
-			position.x += deltaCameraX * parallaxFactor;
-			deltaCameraX = (camera.target.x - previousCameraX) - (camera.offset.x - previousOffsetX);
-			previousCameraX = camera.target.x;
-			previousOffsetX = camera.offset.x;
-		}
-
-		// Scroll the background if it overflows, to give the impression of an infinite background.
-		if ((position.x + texture.width * scaleV.x) < camera.GetScreenToWorld(Vector2Zero()).x)
-		{
-			position.x += (texture.width * scaleV.x);
-		}
-		if (position.x > camera.GetScreenToWorld(raylib::Vector2{(float)GetMonitorWidth(MONITOR), 0.0f}).x)
-		{
-			std::cout << "1: " << position.x << std::endl;
-			position.x -= (texture.width * scaleV.x);
-			std::cout << "2: " << position.x << std::endl;
-		}
-	};
-};
-
 class Player : public Sprite
 {
 public:
@@ -317,7 +290,6 @@ void Player::UpdatePlayer(float delta)
 	{
 		direction.y = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
 		jump_direction = direction.y;
-		std::cout << direction.y << std::endl;
 	}
 
 	// Friction calculation
@@ -486,7 +458,7 @@ public:
 class PlayerCamera
 {
 private:
-	const float MAX_HEIGHT = 225.0f;
+	const float GROUND_HEIGHT = 225.0f;
 	const float MIN_HEIGHT = -5000.0f;
 	const float MAX_DIST = 200.0f; // Max vertical distance from the player.
 	float dist;					   // Camera's vertical distance from the player.
@@ -495,9 +467,14 @@ private:
 public:
 	raylib::Camera2D camera = raylib::Camera2D{Vector2Zero(), Vector2Zero()};
 	raylib::Camera2D GetCamera() { return camera; }
+	float GetGroundHeight() { return GROUND_HEIGHT; }
 	// TODO Will need to add a bool to determine if the target is the player or a static position.
 	raylib::Vector2 target;
+	raylib::Vector2 prevTarget;
+	raylib::Vector2 deltaTarget;
 	raylib::Vector2 offset;
+	raylib::Vector2 prevOffset;
+	raylib::Vector2 deltaOffset;
 	bool is_static_x = false;
 	bool is_static_y = false;
 	Player &player;
@@ -521,6 +498,10 @@ public:
 	}
 	void UpdateCamera()
 	{
+		// Set previous values to compute deltas
+		prevTarget = target + camera.target;
+		prevOffset = offset + camera.offset;
+
 		// TODO Make sure the "zoom around center" works well with camera rotation.
 		camera.zoom = zoom;
 		camera.rotation = rotation;
@@ -552,29 +533,78 @@ public:
 					0.1f);
 			}
 		}
-		std::cout << abs(dist) << " " << MAX_DIST << std::endl;
+
 		if (!is_static_y && freefly && abs(dist) > MAX_DIST)
 		{
-			// camera.offset.y = Lerp(
-			// 	camera.offset.y,
-			// 	Clamp((float)(GetMonitorHeight(MONITOR) / 2) - copysignf(1.0, dist), MIN_HEIGHT, MAX_HEIGHT),
-			// 	0.1f);
 			// FIXME Fix the camera dist y offset thing
-			// std::cout << "should go to player\n";
 			camera.target.y = Lerp(
 				camera.target.y,
 				player.GetCenter().y,
 				0.03f);
 		}
 		camera.rotation = 0.0f;
-		if (camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y > MAX_HEIGHT)
+		if (camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y > GROUND_HEIGHT)
 		{
-			camera.target.y -= camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y - MAX_HEIGHT;
-			// camera.offset.y = Lerp(camera.offset.y,
-			// 					   camera.offset.y + camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y - MAX_HEIGHT,
-			// 					   0.5f);
+			camera.target.y -= camera.GetScreenToWorld(raylib::Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}).y - GROUND_HEIGHT;
 		}
 		camera.rotation = rotation;
+
+		// Set deltas for ParallaxSprite
+		deltaTarget = (target + camera.target) - prevTarget;
+		deltaOffset = (offset + camera.offset) - prevOffset;
+	};
+};
+
+class ParallaxSprite : public Sprite
+{
+private:
+	float parallaxFactorX = 0.0f;
+	float parallaxFactorY = 0.0f;
+	const float GROUND_POSITION_Y = 0.0f;
+	raylib::Vector2 deltaCamera = Vector2Zero();
+
+public:
+	using Sprite::Sprite;
+	void SetParallaxFactor(float factorX, float factorY)
+	{
+		parallaxFactorX = factorX;
+		parallaxFactorY = factorY;
+	};
+	void SetParallaxFactorX(float factorX) { parallaxFactorX = factorX; };
+	void SetParallaxFactorY(float factorY) { parallaxFactorY = factorY; };
+	float GetParallaxFactorX() { return parallaxFactorX; };
+	float GetParallaxFactorY() { return parallaxFactorY; };
+	void UpdateParallax(PlayerCamera &playerCamera)
+	{
+		// Actual parallax code
+		if (parallaxFactorX != 0.0f)
+		{
+			deltaCamera.x = playerCamera.deltaTarget.x - playerCamera.deltaOffset.x;
+			position.x += deltaCamera.x * parallaxFactorX;
+		}
+		std::cout << GetScreenToWorld2D(Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}, playerCamera.GetCamera()).y << std::endl;
+		if (parallaxFactorY != 0.0f)
+		{
+			if (GetScreenToWorld2D(Vector2{0.0f, (float)GetMonitorHeight(MONITOR)}, playerCamera.GetCamera()).y < GROUND_POSITION_Y)
+			{
+				deltaCamera.y = playerCamera.deltaTarget.y - playerCamera.deltaOffset.y;
+				position.y += deltaCamera.y * parallaxFactorY;
+			}
+			else
+			{
+				position.y = GROUND_POSITION_Y - texture.GetHeight() * scaleV.x;
+			}
+		}
+
+		// Scroll the background if it overflows, to give the impression of an infinite background.
+		if ((position.x + texture.width * scaleV.x) < playerCamera.camera.GetScreenToWorld(Vector2Zero()).x)
+		{
+			position.x += (texture.width * scaleV.x);
+		}
+		if (position.x > playerCamera.camera.GetScreenToWorld(raylib::Vector2{(float)GetMonitorWidth(MONITOR), 0.0f}).x)
+		{
+			position.x -= (texture.width * scaleV.x);
+		}
 	};
 };
 
@@ -642,6 +672,8 @@ int main()
 	SpriteButton playButton(LoadTexture("assets/gui/levelSelectorButton.png"));
 	SpriteButton createButton(LoadTexture("assets/gui/levelCreateButton.png"));
 
+	bool hasUpdatedBackgroundPosY = false;
+
 	quitGameButton.scale = 0.25f;
 	quitGameButton.InitScale();
 
@@ -650,8 +682,9 @@ int main()
 	PlayerCamera playerCamera(player);
 	playerCamera.target = player.position;
 
-	background.SetParallaxFactor(0.75f);
-	ground.SetParallaxFactor(0.0f);
+	background.SetParallaxFactorX(0.75f);
+	background.SetParallaxFactorY(0.5f);
+	ground.SetParallaxFactorX(0.0f);
 	player.position.y = -64.0f;
 
 	FadeScreen fader(BLACK);
@@ -724,11 +757,16 @@ int main()
 			break;
 		case CurrentScreen::IN_LEVEL:
 			ground.position.y = 0.0f;
-			background.position.y = ground.position.y - background.texture.height * background.scaleV.y;
+			// TODO Add a better condition to update the background vertical position for 1 tick.
+			if (background.position.y != (ground.position.y - background.texture.height * background.scaleV.y) && !hasUpdatedBackgroundPosY)
+			{
+				background.position.y = ground.position.y - background.texture.height * background.scaleV.y;
+			}
+			else { hasUpdatedBackgroundPosY = true; }
 			player.UpdatePlayer(deltaTime);
 			playerCamera.UpdateCamera();
-			background.UpdateParallax(playerCamera.camera);
-			ground.UpdateParallax(playerCamera.camera);
+			background.UpdateParallax(playerCamera);
+			ground.UpdateParallax(playerCamera);
 			groundLine.position = raylib::Vector2{
 				playerCamera.GetCenter().x - (groundLine.texture.width * groundLine.scaleV.x) / 2,
 				ground.position.y};
