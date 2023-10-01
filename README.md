@@ -3,7 +3,7 @@
     <h1 align="center">Godot Dash</h1>
 </p>
 
-A Geometry Dash remake made with Raylib.
+A Geometry Dash remake made with [Raylib](https://www.raylib.com/).
 
 ## How to play the game
 
