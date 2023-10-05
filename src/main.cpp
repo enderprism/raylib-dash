@@ -1,6 +1,6 @@
+#include "tween.hpp"
 #include <iostream>
 #include <raylib-cpp.hpp>
-#include "tween.hpp"
 
 #define FRAMERATE 60
 #define MONITOR GetCurrentMonitor()
@@ -23,8 +23,9 @@ public:
 	raylib::Rectangle debugRect;
 	raylib::Color rectColor;
 	raylib::Vector2 position;
-	float scale;			// Scale as a float (equal X and Y scale).
-	raylib::Vector2 scaleV; // Scale as a raylib::Vector2.
+	float scale;				 // Scale as a float (equal X and Y scale).
+	raylib::Vector2 scaleV;		 // Scale as a raylib::Vector2.
+	raylib::Rectangle sourceRec; // Example usage: when you have a spritesheet that you need to split.
 	float rotation;
 	raylib::Color tint;
 	raylib::Vector2 flip = raylib::Vector2{1.0f, 1.0f};
@@ -149,8 +150,8 @@ public:
 		raylib::Rectangle translatedRect = raylib::Rectangle{
 			GetWorldToScreen2D(position, camera).x,
 			GetWorldToScreen2D(position, camera).y,
-			static_cast<float>(texture.width) * camera.GetZoom(),
-			static_cast<float>(texture.height) * camera.GetZoom()};
+			(float)(texture.width) * camera.GetZoom(),
+			(float)(texture.height) * camera.GetZoom()};
 		if (translatedRect.CheckCollision(GetMousePosition()))
 		{
 			return true;
@@ -170,8 +171,8 @@ public:
 raylib::Vector2 Sprite::GetCenter()
 {
 	return raylib::Vector2{
-		position.x + static_cast<float>(texture.width) * scale * 0.5f,
-		position.y + static_cast<float>(texture.height) * scale * 0.5f};
+		position.x + (float)(texture.width) * scale * 0.5f,
+		position.y + (float)(texture.height) * scale * 0.5f};
 }
 
 // Get percentage of the width and height of the game window from the sprite's position, width, height and scale.
@@ -502,7 +503,6 @@ public:
 		prevTarget = target + camera.target;
 		prevOffset = offset + camera.offset;
 
-		// TODO Make sure the "zoom around center" works well with camera rotation.
 		camera.zoom = zoom;
 		camera.rotation = rotation;
 		// TODO Implement proper camera lerping and static
@@ -762,7 +762,10 @@ int main()
 			{
 				background.position.y = ground.position.y - background.texture.height * background.scaleV.y;
 			}
-			else { hasUpdatedBackgroundPosY = true; }
+			else
+			{
+				hasUpdatedBackgroundPosY = true;
+			}
 			player.UpdatePlayer(deltaTime);
 			playerCamera.UpdateCamera();
 			background.UpdateParallax(playerCamera);
