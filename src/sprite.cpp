@@ -6,7 +6,7 @@ Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self
     : texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
 {
     // Set hitbox to sprite size
-    hitbox = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scale), texture.GetHeight() * abs(scale)};
+    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scale), texture.GetHeight() * abs(scale)};
 
     scaleV = raylib::Vector2{scale, scale};
     texture.SetFilter(TEXTURE_FILTER_TRILINEAR);

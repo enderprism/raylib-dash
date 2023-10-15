@@ -1,88 +1,96 @@
 #include "player.hpp"
+#include "hitbox.hpp"
 #include <raylib-cpp.hpp>
 
-void Player::GetCollision(raylib::Rectangle usedHitbox)
+raylib::Vector2 Player::GetDirection()
 {
-    collidingSides = 0;
-    for (int i; i < envItems.size(); i++)
-    {
-        // Collisions from the player's hitbox
-        // Left collision
-        if (usedHitbox.x < envItems[i].x + envItems[i].width)
-        {
-            collidingSides |= (int)CollidingSides::LEFT;
-        }
-        // etc.
-    };
-};
-
-void Player::UpdatePlayer(float delta)
-{
-    // Get direction
+    raylib::Vector2 result;
     if (isPlatformer)
     {
-        direction.x = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
-        horizontal_direction = direction.x;
+        result.x = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
+        result.y = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP); // Temporary top-down controls
+        horizontal_direction = result.x;
+        jump_direction = result.y;
     }
     else
     {
-        direction.x = horizontal_direction;
+        result.x = horizontal_direction;
     }
+    return result;
+}
 
+float Player::GetHorizontalVelocityWithFriction(float delta, float horizontal_velocity)
+{
     // Friction calculation
 
     if (direction.x != 0.0)
     {
-        velocity.x = direction.x * speed.x * delta;
+        horizontal_velocity = direction.x * speed.x * delta;
         flip.x = direction.x;
     }
     if (direction.x == 0)
     {
         // Threshold is set to 1 pixel because there are no sub-pixel movements
-        if (velocity.x > 1)
+        if (horizontal_velocity > 1)
         {
-            velocity.x -= friction * delta;
+            horizontal_velocity -= friction * delta;
         }
-        else if (velocity.x < -1)
+        else if (horizontal_velocity < -1)
         {
-            velocity.x += friction * delta;
+            horizontal_velocity += friction * delta;
         }
         else
         {
-            velocity.x = 0;
+            horizontal_velocity = 0;
         }
     }
-    position.x += velocity.x;
+    return horizontal_velocity;
+}
 
-    // DEBUG: Temporary top-down controls
+void Player::UpdatePlayer(float delta)
+{
     // Get direction
-    if (isPlatformer)
-    {
-        direction.y = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
-        jump_direction = direction.y;
-    }
+    direction = GetDirection();
 
     // Friction calculation
+    if (isPlatformer)
+    {
+        velocity.x = GetHorizontalVelocityWithFriction(delta, velocity.x);
+    }
 
-    if (direction.y != 0.0)
+    for (int i; i < envItems.size(); i++)
     {
-        velocity.y = direction.y * speed.y * delta;
-    }
-    if (direction.y == 0)
-    {
-        // Threshold is set to 1 pixel because there are no sub-pixel movements
-        if (velocity.y > 1)
+        // Collisions from the player's hitbox
+        bool bigHitboxCollidingLeft = bigHitbox.x < envItems[i].bounds.x + envItems[i].bounds.width;
+        bool bigHitboxCollidingRight = bigHitbox.x + bigHitbox.width > envItems[i].bounds.x;
+        bool bigHitboxCollidingTop = bigHitbox.y < envItems[i].bounds.y + envItems[i].bounds.height;
+        if ((bigHitboxCollidingLeft || bigHitboxCollidingRight) && envItems[i].GetType() == Hitbox::HitboxType::SOLID)
         {
-            velocity.y -= friction * delta;
+            if (isPlatformer)
+            {
+                velocity.x = 0.0;
+            }
+            else
+            {
+                KillPlayer(delta);
+            }
         }
-        else if (velocity.y < -1)
+        if (bigHitboxCollidingTop && envItems[i].GetType() == Hitbox::HitboxType::SOLID)
         {
-            velocity.y += friction * delta;
+            if (isPlatformer)
+            {
+                velocity.y = 0.0;
+            }
+            else
+            {
+                KillPlayer(delta);
+            }
         }
-        else
+        if (CheckCollisionRecs(bigHitbox, envItems[i].bounds) && envItems[i].GetType() == Hitbox::HitboxType::HAZARD)
         {
-            velocity.y = 0;
+            KillPlayer(delta);
         }
-    }
-    position.y += velocity.y;
+        // etc.
+    };
+    position += velocity;
 };

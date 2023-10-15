@@ -12,6 +12,8 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
 
+// TODO: Add triggers.
+
 template <typename T>
 void UpdateValueOnce(T &variable, const T &value, bool &hasUpdatedValueOnce)
 {
@@ -104,6 +106,7 @@ int main()
     Sprite logo(LoadTexture("assets/gui/logo.png"), raylib::Vector2{0.0f, 150.0f}, 1.0f);
     ParallaxSprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
     ParallaxSprite ground(LoadTexture("assets/level/ground-long.png"), raylib::Vector2{0.0f, 900.0f}, 0.5f, 0.0f, raylib::Color{0x4a44ffff});
+    ground.hitbox.type = Hitbox::HitboxType::SOLID;
     Sprite groundShadow(LoadTexture("assets/level/groundSquareShadow_001.png"), ground.position, 0.5f, 0.0f, raylib::Color{0xffffff88});
     Sprite groundLine(LoadTexture("assets/level/floorLine_001.png"), raylib::Vector2{0.0f, ground.position.y}, 0.75f, 0.0f, raylib::Color{0xffffffff});
     SpriteButton quitGameButton(LoadTexture("assets/gui/closeButton.png"));

@@ -1,4 +1,5 @@
 #pragma once
+#include "hitbox.hpp"
 #include <raylib-cpp.hpp>
 
 class Sprite
@@ -6,7 +7,6 @@ class Sprite
   public:
     raylib::Texture2D texture;
     raylib::Rectangle debugRect;
-    raylib::Rectangle hitbox;
     raylib::Color rectColor;
     raylib::Vector2 position;
     float scale;                 // Scale as a float (equal X and Y scale).
@@ -15,7 +15,7 @@ class Sprite
     float rotation;
     raylib::Color tint;
     raylib::Vector2 flip = raylib::Vector2{1.0f, 1.0f};
-
+    Hitbox hitbox;
     Sprite(Texture2D self_texture, raylib::Vector2 self_position = raylib::Vector2{0.0, 0.0}, float self_scale = 1.0f, float self_rotation = 0.0f, raylib::Color self_tint = WHITE);
     void Draw();
     void Draw(raylib::Vector2 drawPosition);
