@@ -12,14 +12,22 @@ PlayerCamera::PlayerCamera(Player &self_player)
             ((float)GetMonitorWidth(MONITOR) / 2) + 90.0f * (float)player.horizontal_direction,
             ((float)GetMonitorHeight(MONITOR) / 2)};
     }
+    else
+    {
+        camera.offset = raylib::Vector2{((float)GetMonitorWidth(MONITOR) / 2) + (-300.0f * (float)player.horizontal_direction),
+                                        ((float)GetMonitorHeight(MONITOR) / 2)};
+    }
 };
 
 raylib::Vector2 PlayerCamera::GetCenter()
 {
-    return camera.GetScreenToWorld(raylib::Vector2{
+    camera.rotation = 0.0f;
+    raylib::Vector2 result = camera.GetScreenToWorld(raylib::Vector2{
         (float)GetMonitorWidth(MONITOR) / 2,
         (float)GetMonitorHeight(MONITOR) / 2,
     });
+    camera.rotation = rotation;
+    return result;
 }
 
 void PlayerCamera::UpdateCamera()

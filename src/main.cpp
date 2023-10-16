@@ -105,6 +105,7 @@ int main()
 
     Sprite logo(LoadTexture("assets/gui/logo.png"), raylib::Vector2{0.0f, 150.0f}, 1.0f);
     ParallaxSprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
+    background.hitbox.type = Hitbox::HitboxType::NONSOLID;
     ParallaxSprite ground(LoadTexture("assets/level/ground-long.png"), raylib::Vector2{0.0f, 900.0f}, 0.5f, 0.0f, raylib::Color{0x4a44ffff});
     ground.hitbox.type = Hitbox::HitboxType::SOLID;
     Sprite groundShadow(LoadTexture("assets/level/groundSquareShadow_001.png"), ground.position, 0.5f, 0.0f, raylib::Color{0xffffff88});
@@ -120,10 +121,10 @@ int main()
     quitGameButton.InitScale();
 
     Player player(LoadTexture("assets/player/cube.png"), raylib::Vector2{0.0f, 900.0f - 61.0f}, 0.5f);
+    player.isPlatformer = false;
 
     PlayerCamera playerCamera(player);
     playerCamera.target = player.position;
-
     background.SetParallaxFactorX(0.75f);
     background.SetParallaxFactorY(0.5f);
     ground.SetParallaxFactorX(0.0f);
@@ -132,11 +133,13 @@ int main()
     FadeScreen fader(BLACK);
     raylib::Music menuLoop("assets/sounds/soundEffects/menuLoop.mp3");
 
+    player.envItems.push_back(ground.hitbox);
+
     // Main game loop
     while (!w.ShouldClose())
     {
         // Time elapsed since the last frame
-        float deltaTime = GetFrameTime();
+        float deltaTime = GetFrameTime() * player.time_scale;
         menuLoop.Update();
 
         if (quitGameButton.buttonEvent == SpriteButton::ButtonEvent::IN_ANIM_RELEASED &&
@@ -161,7 +164,7 @@ int main()
             fader.fadeEvent == FadeScreen::FadeEvent::FADED_IN)
         {
             currentScreen = CurrentScreen::IN_LEVEL;
-            fader.FadeOut(0.25f);
+            fader.FadeOut(0.0f);
             playButton.buttonEvent = SpriteButton::ButtonEvent::IDLE;
         }
 
@@ -169,11 +172,11 @@ int main()
 
         if (IsKeyDown(KEY_B))
         {
-            playerCamera.zoom += deltaTime * playerCamera.zoom;
+            playerCamera.zoom += deltaTime / player.time_scale * playerCamera.zoom;
         }
         if (IsKeyDown(KEY_N))
         {
-            playerCamera.zoom -= deltaTime * playerCamera.zoom;
+            playerCamera.zoom -= deltaTime / player.time_scale * playerCamera.zoom;
         }
         if (IsKeyDown(KEY_C))
         {
@@ -201,8 +204,8 @@ int main()
                 garageButton.position = garageButton.MoveToWinPercentage(raylib::Vector2{0.35f, 0.5f});
                 playButton.position = playButton.MoveToWinPercentage(raylib::Vector2{0.5f, 0.5f});
                 createButton.position = createButton.MoveToWinPercentage(raylib::Vector2{0.65f, 0.5f});
-
                 break;
+
             case CurrentScreen::IN_LEVEL:
                 ground.position.y = 0.0f;
                 // TODO Add a better condition to update the background vertical position for 1 tick.
@@ -214,8 +217,8 @@ int main()
                 {
                     hasUpdatedBackgroundPosY = true;
                 }
-                player.UpdatePlayer(deltaTime);
                 playerCamera.UpdateCamera();
+                player.UpdatePlayer(deltaTime);
                 background.UpdateParallax(playerCamera);
                 ground.UpdateParallax(playerCamera);
                 groundLine.position = raylib::Vector2{
@@ -271,7 +274,8 @@ int main()
                 groundShadow.Draw();
                 groundShadow.Draw(
                     raylib::Vector2{
-                        playerCamera.camera.target.x - playerCamera.camera.offset.x + (float)(GetMonitorWidth(MONITOR)) - groundShadow.texture.width * groundShadow.scaleV.x,
+                        playerCamera.camera.target.x - playerCamera.camera.offset.x +
+                            (float)(GetMonitorWidth(MONITOR)) - groundShadow.texture.width * groundShadow.scaleV.x,
                         ground.position.y},
                     180.0f);
                 BeginBlendMode(BLEND_ADDITIVE);

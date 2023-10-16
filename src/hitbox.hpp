@@ -4,7 +4,7 @@
 class Hitbox
 {
   public:
-    enum class HitboxType
+    enum HitboxType
     {
         SOLID,
         HAZARD,
@@ -16,8 +16,9 @@ class Hitbox
         GRAVITY_PORTAL,
         TELEPORTAL,
         TRIGGER,
+        NONSOLID,
     };
-    enum class Orb
+    enum Orb
     {
         ORB_PINK = 1,
         ORB_YELLOW = 2,
@@ -32,7 +33,7 @@ class Hitbox
         ORB_DASH_GREEN = 1024,
         ORB_DASH_MAGENTA = 2048,
     };
-    enum class Pad
+    enum Pad
     {
         PAD_PINK = 1,
         PAD_YELLOW = 2,
@@ -44,17 +45,18 @@ class Hitbox
         PAD_TOGGLE = 128,
         PAD_REBOUND = 256,
     };
-    enum class GamemodePortal
+    enum GamemodePortal
     {
         GMPORTAL_CUBE = 1,
         GMPORTAL_SHIP = 2,
         GMPORTAL_UFO = 4,
-        GMPORTAL_WAVE = 8,
-        GMPORTAL_ROBOT = 16,
-        GMPORTAL_SPIDER = 32,
-        GMPORTAL_SWINGCOPTER = 64,
+        GMPORTAL_BALL = 8,
+        GMPORTAL_WAVE = 16,
+        GMPORTAL_ROBOT = 32,
+        GMPORTAL_SPIDER = 64,
+        GMPORTAL_SWING = 128,
     };
-    enum class SpeedPortal
+    enum SpeedPortal
     {
         SPPORTAL_1X = 1,
         SPPORTAL_2X = 2,
@@ -63,13 +65,13 @@ class Hitbox
         SPPORTAL_5X = 16,
         SPPORTAL_05X = 32,
     };
-    enum class SizePortal
+    enum SizePortal
     {
         SZPORTAL_NORMAL,
         SZPORTAL_SMALL,
         SZPORTAL_BIG, // hehe new feature
     };
-    enum class GravityPortal
+    enum GravityPortal
     {
         GVPORTAL_BLUE,
         GVPORTAL_YELLOW,

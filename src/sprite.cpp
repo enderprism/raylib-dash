@@ -1,4 +1,5 @@
 #include "sprite.hpp"
+#include "hitbox.hpp"
 #include "options.hpp"
 #include <raylib-cpp.hpp>
 
@@ -6,9 +7,9 @@ Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self
     : texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
 {
     // Set hitbox to sprite size
-    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scale), texture.GetHeight() * abs(scale)};
-
     scaleV = raylib::Vector2{scale, scale};
+    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
+
     texture.SetFilter(TEXTURE_FILTER_TRILINEAR);
     rectColor = raylib::Color((GetRandomValue(0, 255)), (GetRandomValue(0, 255)), (GetRandomValue(0, 255)), 50);
 };
@@ -16,6 +17,8 @@ Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self
 void Sprite::Draw()
 {
     scaleV = raylib::Vector2{scale, scale};
+    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
+
     debugRect.SetPosition(position);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));
@@ -54,6 +57,7 @@ void Sprite::Draw(raylib::Vector2 drawPosition)
         drawPosition.y = position.y;
     }
     scaleV = raylib::Vector2{scale, scale};
+    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
     debugRect.SetPosition(drawPosition);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));
@@ -92,6 +96,8 @@ void Sprite::Draw(raylib::Vector2 drawPosition, float drawRotation)
         drawPosition.y = position.y;
     }
     scaleV = raylib::Vector2{scale, scale};
+    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
+
     debugRect.SetPosition(drawPosition);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));
@@ -155,12 +161,20 @@ raylib::Vector2 Sprite::GetWinPercentage()
         GetCenter().y / GetMonitorHeight(MONITOR)};
 }
 
-// Get percentage of the width and height of the game window from the sprite's position, width, height and scale.
-raylib::Vector2 Sprite::GetWinPercentage(raylib::Rectangle rec)
+// Get percentage of the width and height of the specified rectangle from the sprite's position, width, height and scale.
+raylib::Vector2 Sprite::GetRecPercentage(raylib::Rectangle rec)
 {
     return raylib::Vector2{
         GetCenter().x / rec.width,
         GetCenter().y / rec.height};
+}
+
+// Get percentage of the width and height of the specified rectangle from the sprite's position.
+raylib::Vector2 Sprite::GetRecPercentageUnaligned(raylib::Rectangle rec)
+{
+    return raylib::Vector2{
+        position.x / rec.width,
+        position.y / rec.height};
 }
 
 // Move Sprite to percentage of the width and height of the game window.
@@ -172,9 +186,17 @@ raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage)
 }
 
 // Move Sprite to percentage of the width and height of the specified Rectangle.
-raylib::Vector2 Sprite::MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec)
+raylib::Vector2 Sprite::MoveToRecPercentage(raylib::Vector2 percentage, raylib::Rectangle rec)
 {
     return raylib::Vector2{
-        (rec.width * percentage.x) - ((float)texture.width / 2) * scale,
-        (rec.height * percentage.y) - ((float)texture.height / 2) * scale};
+        rec.GetX() + (rec.width * percentage.x) - ((float)texture.width / 2) * scale,
+        rec.GetY() + (rec.height * percentage.y) - ((float)texture.height / 2) * scale};
+}
+
+// Move Sprite to percentage of the width and height of the specified Rectangle without centering the texture.
+raylib::Vector2 Sprite::MoveToRecPercentageUnaligned(raylib::Vector2 percentage, raylib::Rectangle rec)
+{
+    return raylib::Vector2{
+        rec.GetX() + (rec.width * percentage.x),
+        rec.GetY() + (rec.height * percentage.y)};
 }

@@ -22,8 +22,10 @@ class Sprite
     void Draw(raylib::Vector2 drawPosition, float drawRotation);
     bool IsHovered(raylib::Camera2D &camera);
     raylib::Vector2 MoveToWinPercentage(raylib::Vector2 percentage);
-    raylib::Vector2 MoveToWinPercentage(raylib::Vector2 percentage, raylib::Rectangle rec);
+    raylib::Vector2 MoveToRecPercentage(raylib::Vector2 percentage, raylib::Rectangle rec);
+    raylib::Vector2 MoveToRecPercentageUnaligned(raylib::Vector2 percentage, raylib::Rectangle rec);
     raylib::Vector2 GetWinPercentage();
-    raylib::Vector2 GetWinPercentage(raylib::Rectangle rec);
+    raylib::Vector2 GetRecPercentage(raylib::Rectangle rec);
+    raylib::Vector2 GetRecPercentageUnaligned(raylib::Rectangle rec);
     raylib::Vector2 GetCenter();
 };

@@ -30,4 +30,5 @@ class PlayerCamera
     PlayerCamera(Player &self_player);
     raylib::Vector2 GetCenter();
     void UpdateCamera();
+    void InitCamera();
 };
