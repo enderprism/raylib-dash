@@ -1,4 +1,5 @@
-#include "sprite.hpp"
+#pragma once
+#include "hitbox.hpp"
 #include <Music.hpp>
 #include <raylib-cpp.hpp>
 #include <vector>
@@ -6,11 +7,12 @@
 class Level
 {
   public:
-    std::vector<Sprite> objects;
+    std::vector<std::reference_wrapper<Hitbox>> objects;
     raylib::Music song;
     float songStartTime;
     enum class Difficulty
     {
+        AUTO,
         EASY,
         NORMAL,
         HARD,
@@ -22,6 +24,6 @@ class Level
         INSANE_DEMON,
         EXTREME_DEMON,
     };
-    Difficulty difficulty;
-    int starCount;
+    Difficulty difficulty = Difficulty::EASY;
+    int starCount = 1;
 };

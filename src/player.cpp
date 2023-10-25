@@ -13,6 +13,10 @@ raylib::Vector2 Player::GetDirection(bool onGround)
     {
         result.y = 1;
     }
+    else if (onGround)
+    {
+        result.y = 0;
+    }
     else
     {
         result.y = -1;
@@ -151,18 +155,24 @@ raylib::Vector2 Player::CalculateVelocity(float delta)
     }
 }
 
-void Player::UpdatePlayer(float delta)
+void Player::UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox>> &levelObjects)
 {
     textureRec = raylib::Rectangle{position.x, position.y, texture.GetWidth() * scaleV.x, texture.GetHeight() * scaleV.y};
     bigHitbox.SetPosition(
         MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
     bigHitbox.SetSize(
         MoveToRecPercentageUnaligned(Vector2One(), textureRec) - MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
+    smallHitbox.SetPosition(
+        MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
+    smallHitbox.SetSize(
+        MoveToRecPercentageUnaligned(Vector2{0.7f, 0.7f}, textureRec) - MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
     bool bigHitboxCollidingLeft = false;
     bool bigHitboxCollidingRight = false;
     bool bigHitboxCollidingTop = false;
     bool bigHitboxCollidingBottom = false;
     bool standingOnGround = false;
+    bool bigHitboxInFrontOfObjectX = false;
+    bool bigHitboxInFrontOfObjectY = false;
 
     // std::cout << envItems.size() << std::endl;
     // Get direction
@@ -173,50 +183,60 @@ void Player::UpdatePlayer(float delta)
     position += velocity;
     // std::cout << bigHitbox.y << " " << velocity.y << " " << (collidingSides & CollidingSides::GROUND) << std::endl;
 
-    for (Hitbox &object : envItems)
+    for (Hitbox &object : levelObjects)
     {
-        // std::cout << (bigHitbox.y + bigHitbox.height > object.bounds.y) << std::endl;
-        // Collisions from the player's hitbox
-        bigHitboxCollidingLeft = bigHitbox.x < object.bounds.x + object.bounds.width;
-        bigHitboxCollidingRight = bigHitbox.x + bigHitbox.width > object.bounds.x;
-        bigHitboxCollidingTop = bigHitbox.y < object.bounds.y + object.bounds.height;
-        bigHitboxCollidingBottom = bigHitbox.y + bigHitbox.height > object.bounds.y;
-        standingOnGround = (bigHitbox.y + bigHitbox.height + 1 > object.bounds.y) && (object.GetType() == Hitbox::HitboxType::SOLID);
+        if (bigHitbox.height < object.bounds.height)
+        {
+            bigHitboxInFrontOfObjectX = bigHitbox.y > object.bounds.y && bigHitbox.y + bigHitbox.height < object.bounds.y + object.bounds.height;
+        }
+        else
+        {
+            bigHitboxInFrontOfObjectX = object.bounds.y > bigHitbox.y && object.bounds.y + object.bounds.height < bigHitbox.y + bigHitbox.height;
+        }
+        if (bigHitbox.width < object.bounds.width)
+        {
+            bigHitboxInFrontOfObjectY = bigHitbox.x > object.bounds.x && bigHitbox.x + bigHitbox.width < object.bounds.x + object.bounds.width;
+        }
+        else
+        {
+            bigHitboxInFrontOfObjectY = object.bounds.x < bigHitbox.x && object.bounds.x + object.bounds.width < bigHitbox.x + bigHitbox.width;
+        }
+
+        bigHitboxCollidingLeft = bigHitbox.x < object.bounds.x + object.bounds.width && bigHitboxInFrontOfObjectX;
+        bigHitboxCollidingRight = bigHitbox.x + bigHitbox.width > object.bounds.x && bigHitboxInFrontOfObjectX;
+        bigHitboxCollidingTop = bigHitbox.y < object.bounds.y + object.bounds.height && bigHitboxInFrontOfObjectY;
+        bigHitboxCollidingBottom = bigHitbox.y + bigHitbox.height > object.bounds.y && bigHitboxInFrontOfObjectY;
+        standingOnGround = (bigHitbox.y + bigHitbox.height + 1 > object.bounds.y) && bigHitboxInFrontOfObjectY && (object.GetType() == Hitbox::HitboxType::SOLID || object.GetType() == Hitbox::HitboxType::GROUND);
+        if ((bigHitbox.y + bigHitbox.height + 1 > object.bounds.y) && object.GetType() == Hitbox::HitboxType::GROUND)
+        {
+            standingOnGround = true;
+            GetPlayerOutOfGround(object.GetBounds());
+        }
+        // standingOnGround = bigHitboxCollidingBottom && (object.GetType() == Hitbox::HitboxType::SOLID || object.GetType() == Hitbox::HitboxType::GROUND);
 
         // bool smallHitboxCollidingLeft = smallHitbox.x < object.bounds.x + object.bounds.width;
         // bool smallHitboxCollidingRight = smallHitbox.x + smallHitbox.width > object.bounds.x;
         // bool smallHitboxCollidingTop = smallHitbox.y < object.bounds.y + object.bounds.height;
         // bool smallHitboxCollidingBottom = smallHitbox.y + smallHitbox.height > object.bounds.y;
 
-        if (bigHitboxCollidingBottom && object.GetType() == Hitbox::HitboxType::SOLID)
+        if (bigHitboxCollidingBottom && (object.GetType() == Hitbox::HitboxType::SOLID || object.GetType() == Hitbox::HitboxType::GROUND))
         {
             // Get the player out of the ground
             std::cout << "Getting the player out of the ground\n";
             position = GetPlayerOutOfGround(object.GetBounds());
         }
-        //
-        // if ((bigHitboxCollidingLeft || bigHitboxCollidingRight) && object.GetType() == Hitbox::HitboxType::SOLID)
-        // {
-        //     if (isPlatformer)
-        //     {
-        //         velocity.x = 0.0;
-        //     }
-        //     else
-        //     {
-        //         KillPlayer(delta);
-        //     }
-        // }
-        // if (bigHitboxCollidingTop && object.GetType() == Hitbox::HitboxType::SOLID)
-        // {
-        //     if (isPlatformer)
-        //     {
-        //         velocity.y = 0.0;
-        //     }
-        //     else
-        //     {
-        //         KillPlayer(delta);
-        //     }
-        // }
+
+        if (isPlatformer)
+        {
+            if ((bigHitboxCollidingLeft || bigHitboxCollidingRight) && object.GetType() == Hitbox::HitboxType::SOLID)
+            {
+                velocity.x = 0.0;
+            }
+            if (bigHitboxCollidingTop && (object.GetType() == Hitbox::HitboxType::SOLID || object.GetType() == Hitbox::HitboxType::GROUND))
+            {
+                velocity.y = 0.0;
+            }
+        }
 
         if (CheckCollisionRecs(bigHitbox, object.bounds) && object.GetType() == Hitbox::HitboxType::HAZARD)
         {
@@ -225,6 +245,11 @@ void Player::UpdatePlayer(float delta)
         if (CheckCollisionRecs(smallHitbox, object.bounds) && object.GetType() == Hitbox::HitboxType::SOLID)
         {
             KillPlayer(delta);
+        }
+
+        if (!(collidingSides & CollidingSides::GROUND) && standingOnGround)
+        {
+            collidingSides |= CollidingSides::GROUND;
         }
 
         if (collidingSides & CollidingSides::GROUND && !standingOnGround)

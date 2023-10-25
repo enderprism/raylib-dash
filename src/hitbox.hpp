@@ -17,6 +17,7 @@ class Hitbox
         TELEPORTAL,
         TRIGGER,
         NONSOLID,
+        GROUND,
     };
     enum Orb
     {
@@ -78,8 +79,11 @@ class Hitbox
         GVPORTAL_GREEN,
     };
 
+    bool isSpriteSize = true;
     raylib::Rectangle bounds;
     HitboxType type;
     HitboxType GetType();
+    void SetType(HitboxType new_type);
     raylib::Rectangle GetBounds();
+    void SetBounds(raylib::Rectangle new_bounds);
 };

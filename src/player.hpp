@@ -1,6 +1,5 @@
 #pragma once
 #include "hitbox.hpp"
-#include "level.hpp"
 #include "sprite.hpp"
 #include <functional>
 #include <raylib-cpp.hpp>
@@ -47,12 +46,11 @@ class Player : public Sprite
     Gamemode gamemode = Gamemode::CUBE;
     raylib::Rectangle bigHitbox;   // Big hitbox used for the ground and H blocks (in non-platformer) or all the Solid hiboxes (in platformer)
     raylib::Rectangle smallHitbox; // Small hitbox used to check collisions. If it collides with solids or hazards, the player dies.
-    Level currentLevel;
-    std::vector<std::reference_wrapper<Hitbox>> envItems;
+    // std::vector<std::reference_wrapper<Hitbox>> levelObjects;
     using Sprite::Sprite;
     float GetHorizontalVelocityWithFriction(float delta, float horizontal_velocity);
     raylib::Vector2 GetDirection(bool onGround);
-    void UpdatePlayer(float delta);
+    void UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox>> &levelObjects);
     void KillPlayer(float delta);
     raylib::Vector2 GetPlayerOutOfGround(raylib::Rectangle ground);
     raylib::Vector2 CalculateVelocity(float delta);

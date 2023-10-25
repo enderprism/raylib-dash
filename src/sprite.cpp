@@ -3,6 +3,21 @@
 #include "options.hpp"
 #include <raylib-cpp.hpp>
 
+void Sprite::UpdateHitbox()
+{
+    if (hitbox.isSpriteSize)
+    {
+        hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
+    }
+    else
+    {
+        hitbox.bounds.x += position.x - hitbox.GetBounds().GetX();
+        hitbox.bounds.y += position.y - hitbox.GetBounds().GetY();
+        hitbox.bounds.width += texture.GetWidth() * abs(scaleV.x) - hitbox.GetBounds().GetWidth();
+        hitbox.bounds.height += texture.GetHeight() * abs(scaleV.y) - hitbox.GetBounds().GetHeight();
+    }
+}
+
 Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self_scale, float self_rotation, raylib::Color self_tint)
     : texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
 {
@@ -17,8 +32,7 @@ Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self
 void Sprite::Draw()
 {
     scaleV = raylib::Vector2{scale, scale};
-    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
-
+    UpdateHitbox();
     debugRect.SetPosition(position);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));
@@ -57,7 +71,7 @@ void Sprite::Draw(raylib::Vector2 drawPosition)
         drawPosition.y = position.y;
     }
     scaleV = raylib::Vector2{scale, scale};
-    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
+    UpdateHitbox();
     debugRect.SetPosition(drawPosition);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));
@@ -96,8 +110,7 @@ void Sprite::Draw(raylib::Vector2 drawPosition, float drawRotation)
         drawPosition.y = position.y;
     }
     scaleV = raylib::Vector2{scale, scale};
-    hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
-
+    UpdateHitbox();
     debugRect.SetPosition(drawPosition);
     debugRect.SetWidth(texture.GetWidth() * abs(scale));
     debugRect.SetHeight(texture.GetHeight() * abs(scale));

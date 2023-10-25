@@ -28,4 +28,5 @@ class Sprite
     raylib::Vector2 GetRecPercentage(raylib::Rectangle rec);
     raylib::Vector2 GetRecPercentageUnaligned(raylib::Rectangle rec);
     raylib::Vector2 GetCenter();
+    void UpdateHitbox();
 };

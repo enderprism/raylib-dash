@@ -1,5 +1,6 @@
 #include "fadescreen.hpp"
 #include "hitbox.hpp"
+#include "level.hpp"
 #include "options.hpp"
 #include "parallaxsprite.hpp"
 #include "player.hpp"
@@ -107,7 +108,7 @@ int main()
     ParallaxSprite background(LoadTexture("assets/level/background1-3.png"), raylib::Vector2{0.0f, -500.0f}, 0.75f, 0.0f, raylib::Color{0x46a0ffff});
     background.hitbox.type = Hitbox::HitboxType::NONSOLID;
     ParallaxSprite ground(LoadTexture("assets/level/ground-long.png"), raylib::Vector2{0.0f, 900.0f}, 0.5f, 0.0f, raylib::Color{0x4a44ffff});
-    ground.hitbox.type = Hitbox::HitboxType::SOLID;
+    ground.hitbox.SetType(Hitbox::HitboxType::GROUND);
     Sprite groundShadow(LoadTexture("assets/level/groundSquareShadow_001.png"), ground.position, 0.5f, 0.0f, raylib::Color{0xffffff88});
     Sprite groundLine(LoadTexture("assets/level/floorLine_001.png"), raylib::Vector2{0.0f, ground.position.y}, 0.75f, 0.0f, raylib::Color{0xffffffff});
     SpriteButton quitGameButton(LoadTexture("assets/gui/closeButton.png"));
@@ -133,7 +134,9 @@ int main()
     FadeScreen fader(BLACK);
     raylib::Music menuLoop("assets/sounds/soundEffects/menuLoop.mp3");
 
-    player.envItems.push_back(ground.hitbox);
+    Level testLevel;
+    testLevel.song = raylib::Music("assets/sounds/levels/Secret Song.mp3");
+    testLevel.objects.push_back(ground.hitbox);
 
     // Main game loop
     while (!w.ShouldClose())
@@ -189,6 +192,7 @@ int main()
                 if (!menuLoop.IsPlaying())
                 {
                     menuLoop.Play();
+                    testLevel.song.Stop();
                 }
                 background.position.x -= 250 * deltaTime;
                 background.position.x = fmodf(background.position.x, background.texture.width * background.scale);
@@ -207,6 +211,11 @@ int main()
                 break;
 
             case CurrentScreen::IN_LEVEL:
+                if (!testLevel.song.IsPlaying())
+                {
+                    testLevel.song.Play();
+                    testLevel.song.Seek(testLevel.songStartTime);
+                }
                 ground.position.y = 0.0f;
                 // TODO Add a better condition to update the background vertical position for 1 tick.
                 if (background.position.y != (ground.position.y - background.texture.height * background.scaleV.y) && !hasUpdatedBackgroundPosY)
@@ -218,7 +227,7 @@ int main()
                     hasUpdatedBackgroundPosY = true;
                 }
                 playerCamera.UpdateCamera();
-                player.UpdatePlayer(deltaTime);
+                player.UpdatePlayer(deltaTime, testLevel.objects);
                 background.UpdateParallax(playerCamera);
                 ground.UpdateParallax(playerCamera);
                 groundLine.position = raylib::Vector2{
@@ -281,7 +290,10 @@ int main()
                 BeginBlendMode(BLEND_ADDITIVE);
                 groundLine.Draw();
                 EndBlendMode();
-                playerCamera.GetCamera().EndMode();
+                player.bigHitbox.Draw(RED);
+                player.smallHitbox.Draw(BLUE);
+                playerCamera.GetCamera()
+                    .EndMode();
                 break;
             case CurrentScreen::LEVEL_SELECTOR:
                 ClearBackground(WHITE);
