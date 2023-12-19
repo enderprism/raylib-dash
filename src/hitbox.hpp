@@ -43,8 +43,7 @@ class Hitbox
         PAD_GREEN = 16,
         PAD_BLACK = 32,
         PAD_SPIDER = 64,
-        PAD_TOGGLE = 128,
-        PAD_REBOUND = 256,
+        PAD_REBOUND = 128,
     };
     enum GamemodePortal
     {

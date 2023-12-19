@@ -1,9 +1,12 @@
 #include "player.hpp"
 #include "hitbox.hpp"
+#include "sprite.hpp"
 #include <iostream>
 #include <raylib-cpp.hpp>
 #include <raylib.h>
 #include <raymath.h>
+
+Player::Player(Sprite self_icon) : icon(self_icon) {}
 
 raylib::Vector2 Player::GetDirection(bool onGround)
 {
@@ -41,7 +44,7 @@ float Player::GetHorizontalVelocityWithFriction(float delta, float horizontal_ve
     if (direction.x != 0.0)
     {
         horizontal_velocity = direction.x * speed.x * delta;
-        flip.x = direction.x;
+        icon.flip.x = direction.x;
     }
     if (direction.x == 0)
     {
@@ -70,15 +73,15 @@ float Player::CalculateIconRotation(float delta)
         {
             if (collidingSides & CollidingSides::GROUND)
             {
-                return Lerp(rotation, roundf(rotation / 90) * 90, 0.5f);
+                return Lerp(icon.rotation, roundf(icon.rotation / 90) * 90, 0.5f);
             }
             else
             {
-                return rotation + delta * 400.0f * direction.x;
+                return icon.rotation + delta * 400.0f * direction.x;
             }
         }
     }
-    return rotation;
+    return icon.rotation;
 }
 
 void Player::KillPlayer(float delta)
@@ -89,7 +92,7 @@ void Player::KillPlayer(float delta)
 raylib::Vector2 Player::GetPlayerOutOfGround(raylib::Rectangle ground)
 {
     collidingSides |= CollidingSides::GROUND;
-    return raylib::Vector2{position.x, (ground.GetY() - bigHitbox.GetHeight())};
+    return raylib::Vector2{icon.position.x, (ground.GetY() - bigHitbox.GetHeight())};
 }
 
 raylib::Vector2 Player::CalculateVelocity(float delta)
@@ -157,15 +160,15 @@ raylib::Vector2 Player::CalculateVelocity(float delta)
 
 void Player::UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox>> &levelObjects)
 {
-    textureRec = raylib::Rectangle{position.x, position.y, texture.GetWidth() * scaleV.x, texture.GetHeight() * scaleV.y};
+    textureRec = raylib::Rectangle{icon.position.x, icon.position.y, icon.texture.GetWidth() * icon.scaleV.x, icon.texture.GetHeight() * icon.scaleV.y};
     bigHitbox.SetPosition(
-        MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
+        icon.MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
     bigHitbox.SetSize(
-        MoveToRecPercentageUnaligned(Vector2One(), textureRec) - MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
+        icon.MoveToRecPercentageUnaligned(Vector2One(), textureRec) - icon.MoveToRecPercentageUnaligned(Vector2Zero(), textureRec));
     smallHitbox.SetPosition(
-        MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
+        icon.MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
     smallHitbox.SetSize(
-        MoveToRecPercentageUnaligned(Vector2{0.7f, 0.7f}, textureRec) - MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
+        icon.MoveToRecPercentageUnaligned(Vector2{0.7f, 0.7f}, textureRec) - icon.MoveToRecPercentageUnaligned(Vector2{0.3f, 0.3f}, textureRec));
     bool bigHitboxCollidingLeft = false;
     bool bigHitboxCollidingRight = false;
     bool bigHitboxCollidingTop = false;
@@ -179,8 +182,8 @@ void Player::UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox
     direction = GetDirection(collidingSides & CollidingSides::GROUND);
 
     velocity = CalculateVelocity(delta);
-    rotation = CalculateIconRotation(delta);
-    position += velocity;
+    icon.rotation = CalculateIconRotation(delta);
+    icon.position += velocity;
     // std::cout << bigHitbox.y << " " << velocity.y << " " << (collidingSides & CollidingSides::GROUND) << std::endl;
 
     for (Hitbox &object : levelObjects)
@@ -223,7 +226,7 @@ void Player::UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox
         {
             // Get the player out of the ground
             std::cout << "Getting the player out of the ground\n";
-            position = GetPlayerOutOfGround(object.GetBounds());
+            icon.position = GetPlayerOutOfGround(object.GetBounds());
         }
 
         if (isPlatformer)

@@ -28,7 +28,7 @@ class PlayerCamera
     float zoom = 1.5f;
     float rotation = 0.0f; // in degrees
     PlayerCamera(Player &self_player);
-    raylib::Vector2 GetCenter();
+    raylib::Vector2 GetCameraCenter();
     void UpdateCamera();
     void InitCamera();
 };

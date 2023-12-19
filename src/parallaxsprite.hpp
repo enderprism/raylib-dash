@@ -2,7 +2,7 @@
 #include "sprite.hpp"
 #include <raylib-cpp.hpp>
 
-class ParallaxSprite : public Sprite
+class ParallaxSprite
 {
   private:
     float parallaxFactorX = 0.0f;
@@ -11,7 +11,8 @@ class ParallaxSprite : public Sprite
     raylib::Vector2 deltaCamera = Vector2Zero();
 
   public:
-    using Sprite::Sprite;
+    Sprite sprite;
+    ParallaxSprite(Sprite self_sprite);
     void SetParallaxFactor(float factorX, float factorY)
     {
         parallaxFactorX = factorX;

@@ -2,6 +2,8 @@
 #include "hitbox.hpp"
 #include "options.hpp"
 #include <raylib-cpp.hpp>
+#include <raylib.h>
+#include <string>
 
 void Sprite::UpdateHitbox()
 {
@@ -18,19 +20,22 @@ void Sprite::UpdateHitbox()
     }
 }
 
-Sprite::Sprite(Texture2D self_texture, raylib::Vector2 self_position, float self_scale, float self_rotation, raylib::Color self_tint)
-    : texture(self_texture), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
+Sprite::Sprite(std::string self_texture_path, raylib::Vector2 self_position, float self_scale, float self_rotation, raylib::Color self_tint)
+    : texture_path(self_texture_path), position(self_position), scale(self_scale), rotation(self_rotation), tint(self_tint)
 {
+    texture = LoadTexture(self_texture_path.c_str());
     // Set hitbox to sprite size
     scaleV = raylib::Vector2{scale, scale};
     hitbox.bounds = raylib::Rectangle{position.x, position.y, texture.GetWidth() * abs(scaleV.x), texture.GetHeight() * abs(scaleV.y)};
 
     texture.SetFilter(TEXTURE_FILTER_TRILINEAR);
+    // texture.GenMipmaps();
     rectColor = raylib::Color((GetRandomValue(0, 255)), (GetRandomValue(0, 255)), (GetRandomValue(0, 255)), 50);
 };
 
 void Sprite::Draw()
 {
+    // texture = LoadTexture(texture_path.c_str());
     scaleV = raylib::Vector2{scale, scale};
     UpdateHitbox();
     debugRect.SetPosition(position);

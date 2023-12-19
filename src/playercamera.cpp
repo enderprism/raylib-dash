@@ -5,7 +5,7 @@
 PlayerCamera::PlayerCamera(Player &self_player)
     : player(self_player)
 {
-    camera.target = player.GetCenter();
+    camera.target = player.icon.GetCenter();
     if (player.isPlatformer)
     {
         camera.offset = raylib::Vector2{
@@ -19,7 +19,7 @@ PlayerCamera::PlayerCamera(Player &self_player)
     }
 };
 
-raylib::Vector2 PlayerCamera::GetCenter()
+raylib::Vector2 PlayerCamera::GetCameraCenter()
 {
     camera.rotation = 0.0f;
     raylib::Vector2 result = camera.GetScreenToWorld(raylib::Vector2{
@@ -39,14 +39,14 @@ void PlayerCamera::UpdateCamera()
     camera.zoom = zoom;
     camera.rotation = rotation;
     // TODO Implement proper camera lerping and static
-    dist = player.GetCenter().y - GetCenter().y;
+    dist = player.icon.GetCenter().y - GetCameraCenter().y;
     if (!is_static_x)
     {
         // camera.target = Vector2Lerp(
         // 	camera.target,
         // 	player.GetCenter(),
         // 	0.5f);
-        camera.target.x = Lerp(camera.target.x, player.GetCenter().x, 0.5f);
+        camera.target.x = Lerp(camera.target.x, player.icon.GetCenter().x, 0.5f);
         if (player.isPlatformer)
         {
             camera.offset = Vector2Lerp(
@@ -76,7 +76,7 @@ void PlayerCamera::UpdateCamera()
         // FIXME Fix the camera dist y offset thing
         camera.target.y = Lerp(
             camera.target.y,
-            player.GetCenter().y,
+            player.icon.GetCenter().y,
             0.03f);
     }
     camera.rotation = 0.0f;

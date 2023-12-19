@@ -1,6 +1,8 @@
 #pragma once
 #include "hitbox.hpp"
 #include <raylib-cpp.hpp>
+#include <raylib.h>
+#include <string>
 
 class Sprite
 {
@@ -16,7 +18,10 @@ class Sprite
     raylib::Color tint;
     raylib::Vector2 flip = raylib::Vector2{1.0f, 1.0f};
     Hitbox hitbox;
-    Sprite(Texture2D self_texture, raylib::Vector2 self_position = raylib::Vector2{0.0, 0.0}, float self_scale = 1.0f, float self_rotation = 0.0f, raylib::Color self_tint = WHITE);
+    Sprite(std::string self_texture_path, raylib::Vector2 self_position = raylib::Vector2{0.0, 0.0}, float self_scale = 1.0f, float self_rotation = 0.0f, raylib::Color self_tint = WHITE);
+    Sprite(const Sprite &prev_sprite) : Sprite{prev_sprite.texture_path, prev_sprite.position, prev_sprite.scale, prev_sprite.rotation, prev_sprite.tint} {
+                                            // texture = Texture2D(prev_sprite.texture);
+                                        }; // copy constructor
     void Draw();
     void Draw(raylib::Vector2 drawPosition);
     void Draw(raylib::Vector2 drawPosition, float drawRotation);
@@ -29,4 +34,5 @@ class Sprite
     raylib::Vector2 GetRecPercentageUnaligned(raylib::Rectangle rec);
     raylib::Vector2 GetCenter();
     void UpdateHitbox();
+    std::string texture_path; // load texture in constructor
 };

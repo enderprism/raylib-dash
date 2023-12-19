@@ -6,9 +6,10 @@
 
 // All values are taken from Godot Dash and are mapped to the player's height in Raylib Dash: (value*64)/122
 
-class Player : public Sprite
+class Player
 {
   public:
+    Sprite icon;
     float time_scale = 1.0f;
     raylib::Rectangle textureRec;
     raylib::Vector2 speed{625.0f, 1100.0f};
@@ -47,7 +48,7 @@ class Player : public Sprite
     raylib::Rectangle bigHitbox;   // Big hitbox used for the ground and H blocks (in non-platformer) or all the Solid hiboxes (in platformer)
     raylib::Rectangle smallHitbox; // Small hitbox used to check collisions. If it collides with solids or hazards, the player dies.
     // std::vector<std::reference_wrapper<Hitbox>> levelObjects;
-    using Sprite::Sprite;
+    Player(Sprite self_icon);
     float GetHorizontalVelocityWithFriction(float delta, float horizontal_velocity);
     raylib::Vector2 GetDirection(bool onGround);
     void UpdatePlayer(float delta, std::vector<std::reference_wrapper<Hitbox>> &levelObjects);

@@ -1,7 +1,7 @@
 #include "sprite.hpp"
 #include <raylib-cpp.hpp>
 
-class SpriteButton : public Sprite
+class SpriteButton
 {
   private:
     float scaleDefault = 1.0f;
@@ -10,7 +10,8 @@ class SpriteButton : public Sprite
     float elapsedTime;
 
   public:
-    using Sprite::Sprite;
+    Sprite sprite;
+    SpriteButton(Sprite self_sprite);
     void ResetElapsedTime();
     void InitScale();
     enum class ButtonEvent
